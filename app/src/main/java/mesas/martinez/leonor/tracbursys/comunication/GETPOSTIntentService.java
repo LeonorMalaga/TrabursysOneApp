@@ -19,7 +19,7 @@ import mesas.martinez.leonor.tracbursys.model.Constants;
 /**
  * author :Leonor Martinez Mesas
  * This class implement in a separate handler thread.
- * The DM-M2M communication
+ * The Orion communication
  */
 public class GETPOSTIntentService extends IntentService {
     //atributes
