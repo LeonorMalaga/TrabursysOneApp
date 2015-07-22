@@ -109,7 +109,7 @@ public class User_Activity extends AppCompatActivity {
             //Star Ble service
             // startScan();
             stateaux = Beta_BleService.State.DISCONNECTING.toString();
-            Log.d("--------------STATE----------: ", stateaux);
+            Log.d("-STATE--: ", stateaux);
             PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
                     .edit()
                     .putString(Constants.SERVICE_STATE, stateaux)
@@ -123,9 +123,9 @@ public class User_Activity extends AppCompatActivity {
                     user_fourth_text.setVisibility(View.VISIBLE);
                     back_button.setVisibility(View.VISIBLE);
                     state = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString(Constants.SERVICE_STATE, stateaux);
-                    Log.d("--------------STATE----------: ", state);
-                    stateaux = Beta_BleService.State.DISCONNECTING.toString();
-                    Log.d("--------------STATE----------: ", stateaux + "equals" + (state.equals(stateaux)));
+                    Log.d("------STATE---: ", state);
+                    stateaux = Beta_BleService.State.DISCONNECTING.toString();//Para el servicio de busqueda
+                    Log.d("-----STATE----: ", stateaux + "equals" + (state.equals(stateaux)));
                     if (!state.equals(stateaux)) {
                         stop_start.setVisibility(View.INVISIBLE);
                         //star ble service
@@ -144,7 +144,7 @@ public class User_Activity extends AppCompatActivity {
                         stop_start.setVisibility(View.INVISIBLE);
                         startScan();
                         stateaux = Beta_BleService.State.CONNECTED.toString();
-                        Log.d("--------------STATE----------: ", stateaux);
+                        Log.d("------STATE----: ", stateaux);
                         PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
                                 .edit()
                                 .putString(Constants.SERVICE_STATE, stateaux)
@@ -231,16 +231,16 @@ public class User_Activity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
         bindService(mServiceIntent, mConnection, BIND_AUTO_CREATE);
-        Log.d("----------------DENTRO-----------", "-------------------ON--Start----");
+        Log.d("------DENTRO------", "----ON--Start----");
     }
 
     @Override
     public void onBackPressed() {
-        Log.d(TAG, "-------------BACK BUTTON------------");
+        Log.d(TAG, "-----BACK BUTTON------------");
         Intent setIntent = new Intent(Intent.ACTION_MAIN);
         setIntent.addCategory(Intent.CATEGORY_HOME);
         setIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        startActivity(setIntent);
+        startActivity(setIntent);//Falta Parar servicio
     }
 
     //------------------------------METHOD--------------------------//

@@ -30,23 +30,24 @@ public class GETPOSTIntentService extends IntentService {
     // IntentService can perform, e.g. ACTION_FETCH_NEW_ITEMS
     private static final String ACTION_GET = "com.presencecontrol.m2m.m2m_presencecontrol.action.GET";
     private static final String ACTION_POSTHEADER = "com.presencecontrol.m2m.m2m_presencecontrol.action.POSTHEADER";
+    private static final String ACTION_POST = "com.presencecontrol.m2m.m2m_presencecontrol.action.POST";
     // parameters
     private static final String EXTRA_URL = "com.presencecontrol.m2m.m2m_presencecontrol.extra.url";
-  //  private static final String EXTRA_BODY = "com.presencecontrol.m2m.m2m_presencecontrol.extra.PARAM2";
+    private static final String EXTRA_BODY = "com.presencecontrol.m2m.m2m_presencecontrol.extra.PARAM2";
     /**
      * Starts this service to perform action POST with the given parameters. If
      * the service is already performing a task this action will be queued.
      *
      * @see android.app.IntentService
      */
-//    public static void startActionPOST(Context context, String stringUrl, String body) {
-//        Intent intent = new Intent(context, GETPOSTIntentService.class);
-//        intent.setAction(ACTION_POST);
-//        intent.putExtra(EXTRA_URL, stringUrl);
-//        intent.putExtra(EXTRA_BODY, body);
-//        context.startService(intent);
-//    }
-//
+   public static void startActionPOST(Context context, String stringUrl, String body) {
+       Intent intent = new Intent(context, GETPOSTIntentService.class);
+       intent.setAction(ACTION_POST);
+       intent.putExtra(EXTRA_URL, stringUrl);
+       intent.putExtra(EXTRA_BODY, body);
+        context.startService(intent);
+    }
+
 
 
     /**

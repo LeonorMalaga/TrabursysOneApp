@@ -7,7 +7,7 @@
     <!-- LAYOUT -->
     <!-- comunication_m2m_dm -->
     <string name="ipport_TextView">Ip:port:</string>
-    <string name="default_ipport_editText">192.168.173.1:8080</string>
+    <string name="default_ipport_editText">130.206.114.226:1026</string>
     <string name="device_TextView">device_name:</string>
     <string name="default_device_editText">test</string>
     <string name="datoTOsend_TextView">payload:</string>

@@ -33,6 +33,7 @@ import mesas.martinez.leonor.tracbursys.model.Device;
 import mesas.martinez.leonor.tracbursys.model.DeviceDAO;
 import mesas.martinez.leonor.tracbursys.model.MyBledevice;
 import mesas.martinez.leonor.tracbursys.model.MySQLiteHelper;
+import mesas.martinez.leonor.tracbursys.model.OrionJsonManager;
 import mesas.martinez.leonor.tracbursys.model.Project;
 import mesas.martinez.leonor.tracbursys.model.ProjectDAO;
 import mesas.martinez.leonor.tracbursys.phoneSensor.GPSTracker;
@@ -87,7 +88,7 @@ public class Installer_Activity extends AppCompatActivity implements AdapterView
     private BluetoothAdapter.LeScanCallback mLeScanCallback = new BluetoothAdapter.LeScanCallback() {
         @Override
         public void onLeScan(final BluetoothDevice device, int rssi, byte[] scanRecord) {
-            Log.v("--------------DEVICE FAUND-------------------", device.getAddress().toString() + ", rss1=" + rssi);
+            Log.v("---DEVICE FAUND---", device.getAddress().toString() + ", rss1=" + rssi);
             deviceFaund = 2;
             final MyBledevice mydevice = new MyBledevice(device, rssi);
             runOnUiThread(new Runnable() {
@@ -145,7 +146,7 @@ public class Installer_Activity extends AppCompatActivity implements AdapterView
                 charaux = projectaux.getmprojectName();
                 if (charaux.equals(project_name) && i != 0) {
                     auxName = arrayListaux.get(0);
-                    Log.d("------------auxName---------->", auxName);
+                    Log.d("----auxName----->", auxName);
                     arrayListaux.set(0, project_name);
                     arrayListaux.add(i, auxName);
                 } else {
@@ -178,7 +179,7 @@ public class Installer_Activity extends AppCompatActivity implements AdapterView
                     if (gps.canGetLocation()) {
                         double latitude = gps.getLatitude();
                         double longitude = gps.getLongitude();
-                        Log.d("---------------------LocationOk------------------------------------------", "------------------------------------");
+                        Log.d("--LocationOk---", "---");
                         mlatitude = String.valueOf(latitude);
                         mlongitude = String.valueOf(longitude);
                     }
@@ -204,6 +205,18 @@ public class Installer_Activity extends AppCompatActivity implements AdapterView
                         data_validation.setText("This device can not be save. Maybe: the device address exist,or it is not enough space in the database ");
                     } else {
                         data_validation.setText("Save device=" + address + ", with associate text= " + specifications_text);
+                        // llamada a asick task
+                        //InstallerDNIorNIE falta por ahora pongo mi dni
+                        //ProjectName
+                        //mlatitude
+                        //mlongitude
+                         //address;
+                         //rssi value like coberageAlert;
+                        //specifications_text like message;
+                        OrionJsonManager json=new OrionJsonManager("BLE", address, mlatitude, mlongitude, specifications_text, rssi,"45713701M", project_name) ;
+                        Log.d("--json->", json.getJson().toString());
+
+
                     }
 
                 }//onItemClick
@@ -214,7 +227,7 @@ public class Installer_Activity extends AppCompatActivity implements AdapterView
     public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
         // An item was selected. You can retrieve the selected item using
         String name = parent.getItemAtPosition(pos).toString();
-        Log.d("-------Spinner select------->", name);
+        Log.d("--Spinner select->", name);
         PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
                 .edit()
                 .putString(Constants.SPINNER_NAME, name)
