@@ -12,7 +12,7 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.preference.PreferenceManager;
-import android.support.v7.app.AppCompatActivity;
+import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -31,7 +31,7 @@ import mesas.martinez.leonor.tracbursys.phoneSensor.Beta_BleService;
 /**
  * Created by leonor martinez mesas on 21/01/15.
  */
-public class User_Activity extends AppCompatActivity {
+public class User_Activity extends ActionBarActivity {
     private static final int RESULT_SETTINGS = 4;
     //attributes
     int first;

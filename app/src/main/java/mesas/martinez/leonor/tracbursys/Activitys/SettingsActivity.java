@@ -44,8 +44,8 @@ public class SettingsActivity extends PreferenceActivity {
             return;
         }
         addPreferencesFromResource(R.xml.pref_general);
-        bindPreferenceSummaryToValue(findPreference(Constants.URLGET));
-        bindPreferenceSummaryToValue(findPreference(Constants.URLPOSTHEADER));
+       // bindPreferenceSummaryToValue(findPreference(Constants.URLGET));
+        bindPreferenceSummaryToValue(findPreference(Constants.SERVER));
     }
 
     @Override
@@ -149,8 +149,8 @@ public class SettingsActivity extends PreferenceActivity {
             addPreferencesFromResource(R.xml.pref_general);
             bindPreferenceSummaryToValue(findPreference(Constants.WORKMODE));
             bindPreferenceSummaryToValue(findPreference(Constants.SAVEMODE));
-            bindPreferenceSummaryToValue(findPreference(Constants.URLGET));
-            bindPreferenceSummaryToValue(findPreference(Constants.URLPOSTHEADER));
+           // bindPreferenceSummaryToValue(findPreference(Constants.URLGET));
+            bindPreferenceSummaryToValue(findPreference(Constants.SERVER));
 
         }
     }

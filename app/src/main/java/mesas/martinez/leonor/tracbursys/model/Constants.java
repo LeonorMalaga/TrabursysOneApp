@@ -10,8 +10,8 @@ public class Constants {
     public static final String FIRST="com.m2m.ericsson.controller.activity.FIRST";
     public static final String FIRSTINSTALLER="com.m2m.ericsson.controller.activity.FIRSTINSTALLER";
     //---------------------------SETTINGS---------------------------------------//
-    public static final String URLPOSTHEADER="postHeader";
-    public static final String URLGET="getUrl";
+    public static final String SERVER="server";
+   // public static final String URLGET="getUrl";
     public static final String WORKMODE="work_mode_list";
     public static final String SAVEMODE="work_save_list";
     //----------------------------------Constans for DMGETPOSTIntentService-----------------------------------//

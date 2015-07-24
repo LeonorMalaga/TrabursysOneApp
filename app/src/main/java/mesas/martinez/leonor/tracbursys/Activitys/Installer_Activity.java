@@ -9,7 +9,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
-import android.support.v7.app.AppCompatActivity;
+import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -41,7 +41,7 @@ import mesas.martinez.leonor.tracbursys.phoneSensor.GPSTracker;
 /**
  * Created by leonor on 29/01/15.
  */
-public class Installer_Activity extends AppCompatActivity implements AdapterView.OnItemSelectedListener {
+public class Installer_Activity extends ActionBarActivity implements AdapterView.OnItemSelectedListener {
     //atributtes
     private String project_name;
     private Button new_project_button;

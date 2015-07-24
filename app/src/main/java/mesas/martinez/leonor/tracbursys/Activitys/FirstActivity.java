@@ -4,8 +4,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-//import android.support.v7.app.ActionBarActivity;
-import android.support.v7.app.AppCompatActivity;
+import android.support.v7.app.ActionBarActivity;
+//import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -19,8 +19,8 @@ import mesas.martinez.leonor.tracbursys.model.MySQLiteHelper;
 /**
  * Created by leonor martinez mesas on 21/01/15.
  */
-//public class FirstActivity extends ActionBarActivity {
-public class FirstActivity extends AppCompatActivity{
+public class FirstActivity extends ActionBarActivity {
+//public class FirstActivity extends AppCompatActivity{
     private static final int RESULT_SETTINGS = 1;
     //attributes
     int first;
