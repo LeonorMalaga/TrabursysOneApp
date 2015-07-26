@@ -19,7 +19,8 @@ public class OrionJsonManager {
     private String projectName;
     private String installerDNIorNIF;
     private String date;
-    private JSONObject json;
+   // private JSONObject json;
+   private String json;
 
     public OrionJsonManager(String type, String id, String latitude, String longitude, String message, String coberageAlert, String installerDNIorNIF, String projectName) {
         this.type = type;
@@ -35,8 +36,9 @@ public class OrionJsonManager {
         Date d=new Date();
         this.date = sdf.format(d);
         String shortDate=s.format(d);
-        try {
-            json = new JSONObject("{  \n" +
+        //try {
+            //json = new JSONObject(
+               json="{  \n" +
                     "\"contextElements\": [\n" +
                     "  {\n" +
                     "    \"type\": \"" + type + "\",\n" +
@@ -84,13 +86,18 @@ public class OrionJsonManager {
                     "  }\n" +
                     "  ],\n" +
                     "  \"updateAction\": \"APPEND\"\n" +
-                    " }\n");
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-    }
+                    " }\n" ;
+                    //);
+//        } catch (JSONException e) {
+//            e.printStackTrace();
+//        }
+   }
 
-    public JSONObject getJson() {
+    public String getJson() {
         return json;
     }
+    //    public JSONObject getJson() {
+//        return json;
+//    }
+
 }

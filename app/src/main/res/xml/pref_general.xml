@@ -21,7 +21,7 @@
     <EditTextPreference
         android:key="server"
         android:title="@string/pref_server"
-        android:defaultValue="@string/default_ipport_editText"
+        android:defaultValue="@string/default_import_editText"
         android:selectAllOnFocus="true"
         android:inputType="textCapWords"
         android:capitalize="words"
