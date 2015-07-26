@@ -195,16 +195,16 @@ public class Installer_Activity extends ActionBarActivity implements AdapterView
                     project_name = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString(Constants.SPINNER_NAME, "Anonymous27");
                     projectaux = projectDAO.getProjectByName(project_name);
                     projectDAO.close();
-//                    deviceaux = new Device(projectaux.get_id(), address, mlatitude, mlongitude, name, specifications_text, rssi);
-//                    deviceDAO = new DeviceDAO(getApplicationContext());
-//                    deviceDAO.open();
-//                    device_id = deviceDAO.create(deviceaux);
-//                    deviceDAO.close();
-//                    deviceaux.set_id(device_id);
-//
-//                    if (device_id == -1) {
-//                        data_validation.setText("This device can not be save. Maybe: the device address exist,or it is not enough space in the database ");
-//                    } else {
+                    deviceaux = new Device(projectaux.get_id(), address, mlatitude, mlongitude, name, specifications_text, rssi);
+                    deviceDAO = new DeviceDAO(getApplicationContext());
+                    deviceDAO.open();
+                    device_id = deviceDAO.create(deviceaux);
+                    deviceDAO.close();
+                    deviceaux.set_id(device_id);
+
+                    if (device_id == -1) {
+                        data_validation.setText("This device can not be save. Maybe: the device address exist,or it is not enough space in the database ");
+                    } else {
                         data_validation.setText("Save device=" + address + ", with associate text= " + specifications_text);
                         // llamada a asick task
                         //InstallerDNIorNIE falta por ahora pongo mi dni
@@ -221,7 +221,7 @@ public class Installer_Activity extends ActionBarActivity implements AdapterView
                         new HTTP_JSON_POST(getApplicationContext(), query,stringBody).execute();
 
 
-                    //}
+                    }
 
                 }//onItemClick
             });
