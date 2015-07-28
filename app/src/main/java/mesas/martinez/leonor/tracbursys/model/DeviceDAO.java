@@ -31,15 +31,17 @@ public class DeviceDAO {
 
     private Device cursorTo(Cursor cursor) {
         Device device = new Device();
-        device.set_id(cursor.getInt(0));
-        device.setprojecto_id(cursor.getInt(1));
-        device.setDate(cursor.getString(2));
-        device.setmDeviceAddress(cursor.getString(3));
-        device.setmDeviceName(cursor.getString(4));
-        device.setDeviceSpecification(cursor.getString(5));
-        device.setMaxRSSI(cursor.getString(6));
-        device.setLatitude(cursor.getString(7));
-        device.setLongitude(cursor.getString(8));
+        if(cursor.getCount()>1) {
+            device.set_id(cursor.getInt(0));
+            device.setprojecto_id(cursor.getInt(1));
+            device.setDate(cursor.getString(2));
+            device.setmDeviceAddress(cursor.getString(3));
+            device.setmDeviceName(cursor.getString(4));
+            device.setDeviceSpecification(cursor.getString(5));
+            device.setMaxRSSI(cursor.getString(6));
+            device.setLatitude(cursor.getString(7));
+            device.setLongitude(cursor.getString(8));
+        }
         return device;
     }
 
@@ -130,6 +132,19 @@ public class DeviceDAO {
 
         Cursor cursor = database.query(MySQLiteHelper.TABLE_DEVICES,
                 allColumns, MySQLiteHelper.COLUMN_DEVICE_ADDRESS + " = " + "\'" + address + "\'", null, null, null, null);
+
+        if (cursor != null) {
+            cursor.moveToFirst();
+            device = cursorTo(cursor);
+        }
+        cursor.close();
+        return device;
+    }
+    public Device getDeviceByAddressAndProject(String address, int project_id) {
+        Device device = new Device();
+
+        Cursor cursor = database.query(MySQLiteHelper.TABLE_DEVICES,
+                allColumns, MySQLiteHelper.COLUMN_DEVICE_ADDRESS + " = " + "\'" + address + "\'" + " and " + MySQLiteHelper.COLUMN_PROJECT_ID+ " = " + project_id, null, null, null, null);
         if (cursor != null) {
             cursor.moveToFirst();
             device = cursorTo(cursor);

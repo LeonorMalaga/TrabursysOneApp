@@ -5,6 +5,8 @@ import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.preference.PreferenceManager;
 import android.util.Log;
+import android.view.View;
+import android.widget.TextView;
 
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
@@ -26,7 +28,13 @@ import java.net.HttpURLConnection;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 
+import mesas.martinez.leonor.tracbursys.R;
 import mesas.martinez.leonor.tracbursys.model.Constants;
+import mesas.martinez.leonor.tracbursys.model.Device;
+import mesas.martinez.leonor.tracbursys.model.DeviceDAO;
+import mesas.martinez.leonor.tracbursys.model.OrionJsonManager;
+import mesas.martinez.leonor.tracbursys.model.Project;
+import mesas.martinez.leonor.tracbursys.model.ProjectDAO;
 
 
 /**
@@ -34,14 +42,27 @@ import mesas.martinez.leonor.tracbursys.model.Constants;
  * Entries <context, Header, body>
  */
 public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
-     URL url;
-     String query;
-     String body;
-    String stringUrl;
-    public HTTP_JSON_POST(Context context, String query, String stringBody){
-        body=stringBody;
+    private URL url;
+    private String query;
+    private String body;
+    private String stringUrl;
+
+    //Variables for work with Database
+    private Project projectaux;
+    private ProjectDAO projectDAO;
+    private Device deviceaux;
+    private DeviceDAO deviceDAO;
+    private OrionJsonManager objectJsonManager;
+    private Context context;
+    TextView data_validation;
+
+    public HTTP_JSON_POST(Context context,TextView data_validation, String query, OrionJsonManager object){
+        this.context=context;
+        this.objectJsonManager=object;
+        this.body=objectJsonManager.getStringJson();
         SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(context);
-        stringUrl = sharedPrefs.getString(Constants.SERVER, "@string/default_import_editText");
+        this.stringUrl = sharedPrefs.getString(Constants.SERVER, "@string/default_import_editText");
+        this.data_validation=data_validation;
         //Http petition to create a new instance in Orion
         //query="/ngsi10/updateContext";
         stringUrl="http://"+stringUrl+query;
@@ -54,7 +75,7 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
     }
     @Override
     protected String doInBackground(String... params) {
-        String result="@string/error";
+        String result="0";
         try{
             DefaultHttpClient client=new DefaultHttpClient();
             HttpPost httpPostFinal=new HttpPost(url.toURI());
@@ -84,6 +105,36 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
     protected void onPostExecute(String s) {
         super.onPostExecute(s);
         Log.i("OrionResponse",s);
+
+        //If all go well, save the device in the Database
+        if(s!="0"){
+        //obtain values from object OrionJsonManager
+        String address=objectJsonManager.getId();
+        String mlatitude=objectJsonManager.getLatitude();
+        String mlongitude=objectJsonManager.getLongitude();
+        String name=objectJsonManager.getDeviceName();
+        String specifications_text=objectJsonManager.getMessage();
+        String rssi=objectJsonManager.getCoberageAlert();
+        String project_name=objectJsonManager.getProjectName();
+
+        //Work with Database
+        projectDAO = new ProjectDAO(context);
+        projectDAO.open();
+        projectaux = projectDAO.getProjectByName(project_name);
+        projectDAO.close();
+        deviceaux = new Device(projectaux.get_id(), address, mlatitude, mlongitude, name, specifications_text, rssi);
+        deviceDAO = new DeviceDAO(context);
+        deviceDAO.open();
+        int device_id = deviceDAO.create(deviceaux);
+        deviceDAO.close();
+        deviceaux.set_id(device_id);
+            if(device_id==-1){
+                data_validation.setText("ERROR:Saved device =" + address + ", with associate text= " + specifications_text+"in remote Server but it can save in local dataBase ");
+            }else{
+                data_validation.setText("Saved device =" + address + ", with associate text= " + specifications_text+"in remote Server and local dataBase");
+            }
+
+        }
     }
 //-------------------Mi-Methods-------------------------------//
     private String inputStreamToString(InputStream is) throws IOException {

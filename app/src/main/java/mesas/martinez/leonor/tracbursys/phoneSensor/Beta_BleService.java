@@ -170,16 +170,7 @@ public class Beta_BleService extends Service implements BluetoothAdapter.LeScanC
 
     @Override
     public void onLeScan(final BluetoothDevice device, int rssi, byte[] scanRecord) {
-        //  if (device != null && !mDevices.containsValue(device) && device.getName() != null && device.getName().equals("SensorTag")) {
-//        mDevices.put(device.getAddress(), device);
-//            Message msg = Message.obtain(null, MSG_DEVICE_FOUND);
-//            if (msg != null) {
-//                Bundle bundle = new Bundle();
-//                String[] addresses = mDevices.keySet().toArray(new String[mDevices.size()]);
-//                bundle.putStringArray(KEY_MAC_ADDRESSES, addresses);
-//                msg.setData(bundle);
-//                sendMessage(msg);
-//            }else{
+
         address = device.getAddress();
         string_rssi = String.valueOf(rssi);
         Log.d(TAG, "------------------Added---------------\n\n\n " + device.getName() + "address: " + address + "-->rssi: " + string_rssi);
@@ -188,12 +179,16 @@ public class Beta_BleService extends Service implements BluetoothAdapter.LeScanC
         try {
             old_address = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString(Constants.DEVICE_ADDRESS, "0");
             old_string_rssi = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString(Constants.DEVICE_RSSI, "0");
+            //If It detected a new device
             if (!old_address.equals(address)) {
                 deviceaux = deviceDAO.getDeviceByAddress(device.getAddress().toString());
+                //Obtain text to server
+                //if The server not respond, tray to obtain tex to database
                 toSpeak = deviceaux.getDeviceSpecification();
                 Log.d(TAG, "------device is save---- at date----:" + toSpeak);
 
                 speakTheText(toSpeak);
+                //set the value of the last device detected
                 PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
                         .edit()
                         .putString(Constants.DEVICE_ADDRESS, address)
@@ -202,6 +197,8 @@ public class Beta_BleService extends Service implements BluetoothAdapter.LeScanC
                         .edit()
                         .putString(Constants.DEVICE_RSSI, string_rssi)
                         .commit();
+
+            //If It detected the same device again
             } else {
                 Integer auxold = Integer.decode(old_string_rssi);
                 Integer aux = Integer.decode(string_rssi);

@@ -19,10 +19,11 @@ public class OrionJsonManager {
     private String projectName;
     private String installerDNIorNIF;
     private String date;
+    private String deviceName;
    // private JSONObject json;
    private String json;
 
-    public OrionJsonManager(String type, String id, String latitude, String longitude, String message, String coberageAlert, String installerDNIorNIF, String projectName) {
+    public OrionJsonManager(String type, String id, String latitude, String longitude, String message, String coberageAlert, String installerDNIorNIF, String projectName, String deviceName) {
         this.type = type;
         this.id = id;
         this.latitude = latitude;
@@ -31,13 +32,12 @@ public class OrionJsonManager {
         this.coberageAlert = coberageAlert;
         this.projectName = projectName;
         this.installerDNIorNIF = installerDNIorNIF;
+        this.deviceName=deviceName;
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss");
         SimpleDateFormat s = new SimpleDateFormat("yyyyMMdd");
         Date d=new Date();
         this.date = sdf.format(d);
         String shortDate=s.format(d);
-        //try {
-            //json = new JSONObject(
                json="{  \n" +
                     "\"contextElements\": [\n" +
                     "  {\n" +
@@ -87,17 +87,50 @@ public class OrionJsonManager {
                     "  ],\n" +
                     "  \"updateAction\": \"APPEND\"\n" +
                     " }\n" ;
-                    //);
-//        } catch (JSONException e) {
-//            e.printStackTrace();
-//        }
+
    }
 
-    public String getJson() {
+    public String getStringJson() {
         return json;
     }
-    //    public JSONObject getJson() {
-//        return json;
-//    }
 
+    public String getType() {
+        return type;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public String getLatitude() {
+        return latitude;
+    }
+
+    public String getLongitude() {
+        return longitude;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public String getCoberageAlert() {
+        return coberageAlert;
+    }
+
+    public String getProjectName() {
+        return projectName;
+    }
+
+    public String getInstallerDNIorNIF() {
+        return installerDNIorNIF;
+    }
+
+    public String getDate() {
+        return date;
+    }
+
+    public String getDeviceName() {
+        return deviceName;
+    }
 }

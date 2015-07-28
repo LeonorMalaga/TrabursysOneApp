@@ -25,7 +25,8 @@ public class FirstActivity extends ActionBarActivity {
     //attributes
     int first;
     private Button startDefaultButton;
-    MySQLiteHelper Database;
+    MySQLiteHelper DatabaseInstaler;
+    MySQLiteHelper DatabaseUser;
     String workMode;
 
     @Override
@@ -51,7 +52,7 @@ public class FirstActivity extends ActionBarActivity {
             SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
             workMode = sharedPrefs.getString(Constants.WORKMODE, "1");
             Log.d("--FIRST-WOORK MODE-: ", workMode);
-            Database = new MySQLiteHelper(getApplicationContext());
+            DatabaseInstaler = new MySQLiteHelper(getApplicationContext());
             PreferenceManager.getDefaultSharedPreferences(FirstActivity.this)
                     .edit()
                     .putInt(Constants.FIRST, 168451239)

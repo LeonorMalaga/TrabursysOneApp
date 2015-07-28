@@ -9,7 +9,6 @@ import android.util.Log;
 
 public class MySQLiteHelper extends SQLiteOpenHelper {
 
-    //private static final String DATABASE_NAME = "plusindes.db";
     private static final String DATABASE_NAME = "presencecontrol.db";
     private static final int DATABASE_VERSION = 5;
     public static final String TABLE_PAYLOAD = "payload";

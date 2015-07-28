@@ -8,8 +8,8 @@ import java.io.Serializable;
  * identificate by the bluettoth adress(with ejem:<Adress>:AE1234CD,<device_name>:"LUIS", <RSSI>:"-51dBm")
  */
 public class Device implements Serializable {
-    private int _id;
-    private int projecto_id;
+    private int _id=-1;
+    private int projecto_id=-1;
     private String mdate = null;//The date at which the class is generate
     private String mDeviceAddress = null;// lE1234CD
     private String mDeviceName = null;//"LUIS"
@@ -41,50 +41,6 @@ public class Device implements Serializable {
     }
 
     /**
-     * GETTER-SETTER
-     */
-    public String getMaxRSSI() {
-        return maxRSSI;
-    }
-
-    public void setMaxRSSI(String maxRSSI) {
-        this.maxRSSI = maxRSSI;
-    }
-
-    public int getprojecto_id() {
-        return projecto_id;
-    }
-
-    public void setprojecto_id(int projecto_id) {
-        this.projecto_id = projecto_id;
-    }
-
-    public int get_id() {
-        return _id;
-    }
-
-    public void set_id(int _id) {
-        this._id = _id;
-    }
-
-    public String getLatitude() {
-        return latitude;
-    }
-
-    public void setLatitude(String latitude) {
-        this.latitude = latitude;
-    }
-
-    public String getLongitude() {
-        return longitude;
-    }
-
-    public void setLongitude(String longitude) {
-        this.longitude = longitude;
-    }
-
-
-    /**
      * Method
      * /
      * /**GETTER-SETTER
@@ -93,13 +49,29 @@ public class Device implements Serializable {
      * this.mDeviceAddress = mDeviceAddress;
      * }
      */
+    public String getMaxRSSI() {
+        return maxRSSI;
+    }
+
+    public int getprojecto_id() {
+        return projecto_id;
+    }
+
+    public int get_id() {
+        return _id;
+    }
+
+    public String getLatitude() {
+        return latitude;
+    }
+
+    public String getLongitude() {
+        return longitude;
+    }
     public String getDate() {
         return mdate;
     }
 
-    public void setDate(String mdate) {
-        this.mdate = mdate;
-    }
 
     public String getDeviceId() {
         return mDeviceAddress;
@@ -109,25 +81,67 @@ public class Device implements Serializable {
         return mDeviceSpecification;
     }
 
-    public void setDeviceSpecification(String mDeviceSpecification) {
-        this.mDeviceSpecification = mDeviceSpecification;
+    public String getmDeviceAddress() {
+        return mDeviceAddress;
     }
 
     public String getmDeviceName() {
         return mDeviceName;
     }
 
+    /*SETTERS*/
+    public void setDeviceSpecification(String mDeviceSpecification) {
+        this.mDeviceSpecification = mDeviceSpecification;
+    }
     public void setmDeviceName(String mDeviceName) {
         this.mDeviceName = mDeviceName;
     }
-
-    public String getmDeviceAddress() {
-        return mDeviceAddress;
-    }
-
     public void setmDeviceAddress(String mDeviceAddress) {
         this.mDeviceAddress = mDeviceAddress;
     }
+    public void setDate(String mdate) {
+        this.mdate = mdate;
+    }
+    public void setLongitude(String longitude) {
+        this.longitude = longitude;
+    }
+    public void setMaxRSSI(String maxRSSI) {
+        this.maxRSSI = maxRSSI;
+    }
+    public void setLatitude(String latitude) {
+        this.latitude = latitude;
+    }
+    public void set_id(int _id) {
+        this._id = _id;
+    }
+    public void setprojecto_id(int projecto_id) {
+        this.projecto_id = projecto_id;
+    }
+//    //overloading Methods to avoid exception Problems
+//    public void setLongitude() {
+//
+//    }
+//    public void setMaxRSSI() {
+//
+//    }
+//    public void setLatitude() {
+//
+//    }
+//    public void set_id() {
+//
+//    }
+//    public void setprojecto_id() {
+//
+//    }
+//    public void setmDeviceName() {
+//
+//    }
+//    public void setmDeviceAddress() {
+//
+//    }
+//    public void setDate() {
+//
+//    }
 
     @Override
     public boolean equals(Object o) {

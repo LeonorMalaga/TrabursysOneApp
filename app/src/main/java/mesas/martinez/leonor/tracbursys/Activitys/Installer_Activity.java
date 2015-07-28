@@ -76,7 +76,7 @@ public class Installer_Activity extends ActionBarActivity implements AdapterView
     private GPSTracker gps;
     private MyBledevice ble;
     private String address;
-    private String name;
+    private String deviceName;
     private String rssi;
     private String specifications_text;
     private String workMode;
@@ -187,7 +187,7 @@ public class Installer_Activity extends ActionBarActivity implements AdapterView
 
                     //save ibeacon location and maxrssi
                     address = ble.device.getAddress();
-                    name = ble.device.getName();
+                    deviceName = ble.device.getName();
                     rssi = String.valueOf(ble.rssi);
                     specifications_text = specifications.getText().toString();
                     projectDAO = new ProjectDAO(getApplicationContext());
@@ -195,32 +195,18 @@ public class Installer_Activity extends ActionBarActivity implements AdapterView
                     project_name = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString(Constants.SPINNER_NAME, "Anonymous27");
                     projectaux = projectDAO.getProjectByName(project_name);
                     projectDAO.close();
-                    deviceaux = new Device(projectaux.get_id(), address, mlatitude, mlongitude, name, specifications_text, rssi);
+                    //Now We want to Now if the device is already registered in the database
                     deviceDAO = new DeviceDAO(getApplicationContext());
                     deviceDAO.open();
-                    device_id = deviceDAO.create(deviceaux);
+                    deviceaux = deviceDAO.getDeviceByAddressAndProject(address,projectaux.get_id());
                     deviceDAO.close();
-                    deviceaux.set_id(device_id);
-
-                    if (device_id == -1) {
-                        data_validation.setText("This device can not be save. Maybe: the device address exist,or it is not enough space in the database ");
+                    if (deviceaux.get_id() != -1) {
+                        data_validation.setText("This device can not be save.The device address already exist in the specified Project");
                     } else {
-                        data_validation.setText("Save device=" + address + ", with associate text= " + specifications_text);
-                        // llamada a asick task
-                        //InstallerDNIorNIE falta por ahora pongo mi dni
-                        //ProjectName
-                        //mlatitude
-                        //mlongitude
-                         //address;
-                         //rssi value like coberageAlert;
-                        //specifications_text like message;
-                        OrionJsonManager json=new OrionJsonManager("BLE", address, mlatitude, mlongitude, specifications_text, rssi,"45713701M", project_name) ;
-                        String stringBody=json.getJson().toString();
-                        Log.d("--json->", stringBody);
+
+                        OrionJsonManager json=new OrionJsonManager("BLE", address, mlatitude, mlongitude, specifications_text, rssi,"45713701M", project_name, deviceName) ;
                         String query="/ngsi10/updateContext";
-                        new HTTP_JSON_POST(getApplicationContext(), query,stringBody).execute();
-
-
+                        new HTTP_JSON_POST(getApplicationContext(),data_validation, query,json).execute();
                     }
 
                 }//onItemClick
