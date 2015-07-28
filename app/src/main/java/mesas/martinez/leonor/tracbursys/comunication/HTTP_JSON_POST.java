@@ -42,12 +42,32 @@ import mesas.martinez.leonor.tracbursys.model.ProjectDAO;
  * Entries <context, Header, body>
  */
 public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
+    //---------------------------Variables/Structures---------------------------------------------//
+   public enum Gender{
+      UPDATE_CREATE("/ngsi10/updateContext",0),
+      GET("/ngsi10/queryContext",1);
+        private String query;
+        private int index;
+        private Gender(String query, int index){
+            this.query=query;
+            this.index=index;
+        }
+
+        @Override
+        public String toString() {
+            return query;
+        }
+
+    }
+
+
     private URL url;
-    private String query;
     private String body;
     private String stringUrl;
+    private String error;
+    private Gender gender;
 
-    //Variables for work with Database
+    //Variables to work with Database
     private Project projectaux;
     private ProjectDAO projectDAO;
     private Device deviceaux;
@@ -55,9 +75,10 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
     private OrionJsonManager objectJsonManager;
     private Context context;
     TextView data_validation;
-
-    public HTTP_JSON_POST(Context context,TextView data_validation, String query, OrionJsonManager object){
+    //--------------------------Constructor-------------------------------//
+    public HTTP_JSON_POST(Context context,TextView data_validation, Gender gender, OrionJsonManager object){
         this.context=context;
+        this.gender=gender;
         this.objectJsonManager=object;
         this.body=objectJsonManager.getStringJson();
         SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(context);
@@ -65,7 +86,7 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
         this.data_validation=data_validation;
         //Http petition to create a new instance in Orion
         //query="/ngsi10/updateContext";
-        stringUrl="http://"+stringUrl+query;
+        stringUrl="http://"+stringUrl+gender.query;
         try{
             url=new URL(stringUrl);
         }catch(MalformedURLException e){
@@ -73,9 +94,11 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
         }
 
     }
+    //-------------------------Override-Methods-------------------------------//
     @Override
     protected String doInBackground(String... params) {
         String result="0";
+
         try{
             DefaultHttpClient client=new DefaultHttpClient();
             HttpPost httpPostFinal=new HttpPost(url.toURI());
@@ -90,12 +113,16 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
             HttpResponse response=client.execute(httpPostFinal);
             result=inputStreamToString(response.getEntity().getContent());
         }catch(URISyntaxException e){
+            error=e.getMessage();
             e.printStackTrace();
         } catch (UnsupportedEncodingException e) {
+            error=e.getMessage();
             e.printStackTrace();
         } catch (ClientProtocolException e) {
+            error=e.getMessage();
             e.printStackTrace();
         } catch (IOException e) {
+            error=e.getMessage();
             e.printStackTrace();
         }
         return result;
@@ -108,32 +135,37 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
 
         //If all go well, save the device in the Database
         if(s!="0"){
-        //obtain values from object OrionJsonManager
-        String address=objectJsonManager.getId();
-        String mlatitude=objectJsonManager.getLatitude();
-        String mlongitude=objectJsonManager.getLongitude();
-        String name=objectJsonManager.getDeviceName();
-        String specifications_text=objectJsonManager.getMessage();
-        String rssi=objectJsonManager.getCoberageAlert();
-        String project_name=objectJsonManager.getProjectName();
+            switch(gender.index) {
+                case 0:
+                //obtain values from object OrionJsonManager
+                String address = objectJsonManager.getId();
+                String mlatitude = objectJsonManager.getLatitude();
+                String mlongitude = objectJsonManager.getLongitude();
+                String name = objectJsonManager.getDeviceName();
+                String specifications_text = objectJsonManager.getMessage();
+                String rssi = objectJsonManager.getCoberageAlert();
+                String project_name = objectJsonManager.getProjectName();
 
-        //Work with Database
-        projectDAO = new ProjectDAO(context);
-        projectDAO.open();
-        projectaux = projectDAO.getProjectByName(project_name);
-        projectDAO.close();
-        deviceaux = new Device(projectaux.get_id(), address, mlatitude, mlongitude, name, specifications_text, rssi);
-        deviceDAO = new DeviceDAO(context);
-        deviceDAO.open();
-        int device_id = deviceDAO.create(deviceaux);
-        deviceDAO.close();
-        deviceaux.set_id(device_id);
-            if(device_id==-1){
-                data_validation.setText("ERROR:Saved device =" + address + ", with associate text= " + specifications_text+"in remote Server but it can save in local dataBase ");
-            }else{
-                data_validation.setText("Saved device =" + address + ", with associate text= " + specifications_text+"in remote Server and local dataBase");
-            }
-
+                //Work with Database
+                projectDAO = new ProjectDAO(context);
+                projectDAO.open();
+                projectaux = projectDAO.getProjectByName(project_name);
+                projectDAO.close();
+                deviceaux = new Device(projectaux.get_id(), address, mlatitude, mlongitude, name, specifications_text, rssi);
+                deviceDAO = new DeviceDAO(context);
+                deviceDAO.open();
+                int device_id = deviceDAO.create(deviceaux);
+                deviceDAO.close();
+                deviceaux.set_id(device_id);
+                if (device_id == -1) {
+                    data_validation.setText("ERROR:Saved device =" + address + ", with associate text= " + specifications_text + "in remote Server but it can save in local dataBase ");
+                } else {
+                    data_validation.setText("Saved device =" + address + ", with associate text= " + specifications_text + "in remote Server and local dataBase");
+                }
+                    break;
+            }//fin switch
+        }else{
+            data_validation.setText("Remote Server error:"+error);
         }
     }
 //-------------------Mi-Methods-------------------------------//

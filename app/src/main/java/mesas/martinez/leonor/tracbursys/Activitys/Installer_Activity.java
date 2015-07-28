@@ -203,10 +203,9 @@ public class Installer_Activity extends ActionBarActivity implements AdapterView
                     if (deviceaux.get_id() != -1) {
                         data_validation.setText("This device can not be save.The device address already exist in the specified Project");
                     } else {
-
                         OrionJsonManager json=new OrionJsonManager("BLE", address, mlatitude, mlongitude, specifications_text, rssi,"45713701M", project_name, deviceName) ;
-                        String query="/ngsi10/updateContext";
-                        new HTTP_JSON_POST(getApplicationContext(),data_validation, query,json).execute();
+                        //String query="/ngsi10/updateContext";
+                        new HTTP_JSON_POST(getApplicationContext(),data_validation,HTTP_JSON_POST.Gender.UPDATE_CREATE,json).execute();
                     }
 
                 }//onItemClick

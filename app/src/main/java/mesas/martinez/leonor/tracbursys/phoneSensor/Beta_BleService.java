@@ -183,6 +183,7 @@ public class Beta_BleService extends Service implements BluetoothAdapter.LeScanC
             if (!old_address.equals(address)) {
                 deviceaux = deviceDAO.getDeviceByAddress(device.getAddress().toString());
                 //Obtain text to server
+                //Update database
                 //if The server not respond, tray to obtain tex to database
                 toSpeak = deviceaux.getDeviceSpecification();
                 Log.d(TAG, "------device is save---- at date----:" + toSpeak);
