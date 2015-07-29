@@ -1,5 +1,7 @@
 package mesas.martinez.leonor.tracbursys.model;
 
+import android.util.Log;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -22,7 +24,25 @@ public class OrionJsonManager {
     private String deviceName;
    // private JSONObject json;
    private String json;
+  //Constructor to query message from id
+    public OrionJsonManager(String type, String id){
+        this.type = type;
+        this.id = id;
+        json="{  \n" +
+                "\"entities\": [\n" +
+                "  {\n" +
+                "    \"type\": \"" + type + "\",\n" +
+                "    \"isPattern\": \"false\",\n" +
+                "    \"id\": \"" + id + "\",\n" +
+                "    \"attributes\": [\n" +
+                "     \"message\"\n" +
+                "    ]\n" +
+                " }\n" ;
 
+    };
+
+
+//Constructor to create entity
     public OrionJsonManager(String type, String id, String latitude, String longitude, String message, String coberageAlert, String installerDNIorNIF, String projectName, String deviceName) {
         this.type = type;
         this.id = id;
@@ -132,5 +152,23 @@ public class OrionJsonManager {
 
     public String getDeviceName() {
         return deviceName;
+    }
+
+    public String getMessageFromStringJson(String json){
+        String status="400";
+        String message="\n";
+        try {
+            JSONObject reader= new JSONObject(json);
+            status=reader.getJSONObject("statusCode").getString("code");
+            message=reader.getJSONObject("message").getString("value");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+       if(status!="200"){
+           Log.i("Received Server Error",json);
+           return "-1";
+
+       }else{
+       return message;}
     }
 }

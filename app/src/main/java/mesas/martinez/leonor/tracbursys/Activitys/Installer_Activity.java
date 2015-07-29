@@ -185,7 +185,7 @@ public class Installer_Activity extends ActionBarActivity implements AdapterView
                         mlongitude = String.valueOf(longitude);
                     }
 
-                    //save ibeacon location and maxrssi
+                    //set variables to can save ibeacon
                     address = ble.device.getAddress();
                     deviceName = ble.device.getName();
                     rssi = String.valueOf(ble.rssi);
@@ -205,7 +205,8 @@ public class Installer_Activity extends ActionBarActivity implements AdapterView
                     } else {
                         OrionJsonManager json=new OrionJsonManager("BLE", address, mlatitude, mlongitude, specifications_text, rssi,"45713701M", project_name, deviceName) ;
                         //String query="/ngsi10/updateContext";
-                        new HTTP_JSON_POST(getApplicationContext(),data_validation,HTTP_JSON_POST.Gender.UPDATE_CREATE,json).execute();
+                        //new HTTP_JSON_POST(getApplicationContext(),data_validation,HTTP_JSON_POST.Gender.UPDATE_CREATE,json).execute();
+                        new HTTP_JSON_POST(getApplicationContext(),data_validation,json).execute();
                     }
 
                 }//onItemClick

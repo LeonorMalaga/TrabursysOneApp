@@ -76,9 +76,25 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
     private Context context;
     TextView data_validation;
     //--------------------------Constructor-------------------------------//
-    public HTTP_JSON_POST(Context context,TextView data_validation, Gender gender, OrionJsonManager object){
+    public HTTP_JSON_POST(Context context, OrionJsonManager object){
         this.context=context;
-        this.gender=gender;
+        this.gender=gender.GET;
+        this.objectJsonManager=object;
+        this.body=objectJsonManager.getStringJson();
+        SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(context);
+        this.stringUrl = sharedPrefs.getString(Constants.SERVER, "@string/default_import_editText");
+        //Http petition to create a new instance in Orion
+        //query="/ngsi10/updateContext";
+        stringUrl="http://"+stringUrl+gender.query;
+        try{
+            url=new URL(stringUrl);
+        }catch(MalformedURLException e){
+            e.printStackTrace();
+        }
+    }
+    public HTTP_JSON_POST(Context context,TextView data_validation, OrionJsonManager object){
+        this.context=context;
+        this.gender=gender.UPDATE_CREATE;
         this.objectJsonManager=object;
         this.body=objectJsonManager.getStringJson();
         SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(context);

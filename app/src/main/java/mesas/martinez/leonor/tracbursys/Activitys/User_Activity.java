@@ -40,6 +40,7 @@ public class User_Activity extends ActionBarActivity {
     private TextView user_secon_text;
     private TextView user_third_text;
     private TextView user_fourth_text;
+    private TextView user_text;
     private String workMode;
     private String state;
     private String stateaux;
@@ -51,6 +52,7 @@ public class User_Activity extends ActionBarActivity {
     private Beta_BleService.State mState = Beta_BleService.State.UNKNOWN;
     private MenuItem mRefreshItem = null;
     private ImageView back_button;
+    private Beta_BleService service;
 
     //builder
     public User_Activity() {
@@ -102,6 +104,7 @@ public class User_Activity extends ActionBarActivity {
             user_third_text.setVisibility(View.INVISIBLE);
             user_fourth_text = (TextView) this.findViewById(R.id.user_fourth_textView);
             user_fourth_text.setVisibility(View.INVISIBLE);
+            user_text=(TextView) this.findViewById(R.id.user_textView);
             stop_start = (Button) this.findViewById(R.id.user_button);
             back_button = (ImageView) this.findViewById(R.id.user_back_button_imageView);
             back_button.setVisibility(View.INVISIBLE);
@@ -158,8 +161,6 @@ public class User_Activity extends ActionBarActivity {
 
         }
     }
-
-
     //--------------SETTINGS
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

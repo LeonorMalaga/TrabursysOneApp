@@ -14,6 +14,7 @@ import android.os.RemoteException;
 import android.preference.PreferenceManager;
 import android.speech.tts.TextToSpeech;
 import android.util.Log;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.lang.ref.WeakReference;
@@ -23,9 +24,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import mesas.martinez.leonor.tracbursys.comunication.HTTP_JSON_POST;
 import mesas.martinez.leonor.tracbursys.model.Constants;
 import mesas.martinez.leonor.tracbursys.model.Device;
 import mesas.martinez.leonor.tracbursys.model.DeviceDAO;
+import mesas.martinez.leonor.tracbursys.model.OrionJsonManager;
 
 public class Beta_BleService extends Service implements BluetoothAdapter.LeScanCallback, TextToSpeech.OnInitListener {
     public static final String TAG = "-----------------BleService------------";
@@ -67,7 +70,6 @@ public class Beta_BleService extends Service implements BluetoothAdapter.LeScanC
     private State mState = State.UNKNOWN;
 
     public Beta_BleService() {
-
         mHandler = new IncomingHandler(this);
         mMessenger = new Messenger(mHandler);
     }
@@ -183,6 +185,9 @@ public class Beta_BleService extends Service implements BluetoothAdapter.LeScanC
             if (!old_address.equals(address)) {
                 deviceaux = deviceDAO.getDeviceByAddress(device.getAddress().toString());
                 //Obtain text to server
+                OrionJsonManager json=new OrionJsonManager("BLE", address) ;
+                //String query="/ngsi10/updateContext";
+                new HTTP_JSON_POST(getApplicationContext(),json).execute();
                 //Update database
                 //if The server not respond, tray to obtain tex to database
                 toSpeak = deviceaux.getDeviceSpecification();
