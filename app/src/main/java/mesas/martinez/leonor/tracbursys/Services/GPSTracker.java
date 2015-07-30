@@ -1,4 +1,4 @@
-package mesas.martinez.leonor.tracbursys.phoneSensor;
+package mesas.martinez.leonor.tracbursys.Services;
 
 /**
  * Created by root on 7/01/15.

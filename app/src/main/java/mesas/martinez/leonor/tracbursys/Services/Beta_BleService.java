@@ -1,10 +1,13 @@
-package mesas.martinez.leonor.tracbursys.phoneSensor;
+package mesas.martinez.leonor.tracbursys.Services;
 
 import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -14,7 +17,6 @@ import android.os.RemoteException;
 import android.preference.PreferenceManager;
 import android.speech.tts.TextToSpeech;
 import android.util.Log;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import java.lang.ref.WeakReference;
@@ -76,11 +78,15 @@ public class Beta_BleService extends Service implements BluetoothAdapter.LeScanC
 
     @Override
     public void onCreate() {
-
+//to can reproduce the messages
         tts = new TextToSpeech(this, this);
         tts.setSpeechRate(0.5f);
+//reguister the Broadcast Receiver to obtain the message from the asynctask
+        IntentFilter filter=new IntentFilter(Constants.DEVICE_MESSAGE);
+        MessageReceiver receiver=new MessageReceiver();
+        registerReceiver(receiver, filter);
         Log.v(TAG, "---oncreate_service--------------");
-        toSpeak = "dangerous point ";
+        toSpeak = "Beacon was found ";
         super.onCreate();
     }
 
@@ -185,15 +191,18 @@ public class Beta_BleService extends Service implements BluetoothAdapter.LeScanC
             if (!old_address.equals(address)) {
                 deviceaux = deviceDAO.getDeviceByAddress(device.getAddress().toString());
                 //Obtain text to server
-                OrionJsonManager json=new OrionJsonManager("BLE", address) ;
+                OrionJsonManager jsonManager=new OrionJsonManager() ;
+                String jsonString=jsonManager.SetJSONtoGetMessage("BLE", address);
                 //String query="/ngsi10/updateContext";
-                new HTTP_JSON_POST(getApplicationContext(),json).execute();
+              new HTTP_JSON_POST(getApplicationContext(),jsonManager).execute();
+                //The message will be receiver in the BroadcastReceiver.
+                 //toSpeak = deviceaux.getDeviceSpecification();
+                Log.d(TAG, "------device is save---- at date----:" + toSpeak);
                 //Update database
                 //if The server not respond, tray to obtain tex to database
-                toSpeak = deviceaux.getDeviceSpecification();
-                Log.d(TAG, "------device is save---- at date----:" + toSpeak);
+                //toSpeak = deviceaux.getDeviceSpecification();
 
-                speakTheText(toSpeak);
+                //speakTheText(toSpeak);
                 //set the value of the last device detected
                 PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
                         .edit()
@@ -315,5 +324,13 @@ public class Beta_BleService extends Service implements BluetoothAdapter.LeScanC
     private void speakTheText(String textToSpeak) {
         tts.speak(textToSpeak, TextToSpeech.QUEUE_FLUSH, null);
     }
+  //-----------------------------------Sub-Class-------------------------------------//
+    private class MessageReceiver extends BroadcastReceiver{
+      @Override
+      public void onReceive(Context context, Intent intent) {
+          toSpeak=intent.getStringExtra("message");
+          speakTheText(toSpeak);
+      }
+  }
 
 }

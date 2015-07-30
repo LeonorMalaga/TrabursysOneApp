@@ -1,6 +1,7 @@
 package mesas.martinez.leonor.tracbursys.comunication;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.preference.PreferenceManager;
@@ -15,6 +16,8 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicHeader;
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -77,6 +80,7 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
     TextView data_validation;
     //--------------------------Constructor-------------------------------//
     public HTTP_JSON_POST(Context context, OrionJsonManager object){
+
         this.context=context;
         this.gender=gender.GET;
         this.objectJsonManager=object;
@@ -86,13 +90,14 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
         //Http petition to create a new instance in Orion
         //query="/ngsi10/updateContext";
         stringUrl="http://"+stringUrl+gender.query;
+       // Log.i("-----HTTP_JSON_POST url:----",stringUrl);
         try{
             url=new URL(stringUrl);
         }catch(MalformedURLException e){
             e.printStackTrace();
         }
     }
-    public HTTP_JSON_POST(Context context,TextView data_validation, OrionJsonManager object){
+    public HTTP_JSON_POST(Context context, OrionJsonManager object,TextView data_validation){
         this.context=context;
         this.gender=gender.UPDATE_CREATE;
         this.objectJsonManager=object;
@@ -103,6 +108,7 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
         //Http petition to create a new instance in Orion
         //query="/ngsi10/updateContext";
         stringUrl="http://"+stringUrl+gender.query;
+        //Log.i("-----HTTP_JSON_POST url:----",stringUrl);
         try{
             url=new URL(stringUrl);
         }catch(MalformedURLException e){
@@ -114,7 +120,6 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
     @Override
     protected String doInBackground(String... params) {
         String result="0";
-
         try{
             DefaultHttpClient client=new DefaultHttpClient();
             HttpPost httpPostFinal=new HttpPost(url.toURI());
@@ -125,30 +130,40 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
             httpPostFinal.setHeaders(headers);
             //Build the body
             httpPostFinal.setEntity(new StringEntity(body));
+            //Log.i("HTTP_JSON_POST body:----",body);
             //execute and get response
             HttpResponse response=client.execute(httpPostFinal);
             result=inputStreamToString(response.getEntity().getContent());
+            //Log.i("HTTP_JSON_POST result:",result);
         }catch(URISyntaxException e){
             error=e.getMessage();
             e.printStackTrace();
+            return error;
         } catch (UnsupportedEncodingException e) {
             error=e.getMessage();
             e.printStackTrace();
+            return error;
         } catch (ClientProtocolException e) {
             error=e.getMessage();
             e.printStackTrace();
+            return error;
         } catch (IOException e) {
             error=e.getMessage();
             e.printStackTrace();
+            return error;
         }
+        if(gender.index ==1) {
+            this.onPostExecute(result);
+       }
         return result;
     }
 
     @Override
     protected void onPostExecute(String s) {
+        //Log.i("-------------HTTP_JSON_POST:--------------","Do onPostExecute");
         super.onPostExecute(s);
-        Log.i("OrionResponse",s);
-
+        //Log.i("HTTP_JSON_POST onPostExecute",s);
+        String specifications_text;
         //If all go well, save the device in the Database
         if(s!="0"){
             switch(gender.index) {
@@ -158,7 +173,7 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
                 String mlatitude = objectJsonManager.getLatitude();
                 String mlongitude = objectJsonManager.getLongitude();
                 String name = objectJsonManager.getDeviceName();
-                String specifications_text = objectJsonManager.getMessage();
+                 specifications_text= objectJsonManager.getMessage();
                 String rssi = objectJsonManager.getCoberageAlert();
                 String project_name = objectJsonManager.getProjectName();
 
@@ -178,6 +193,26 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
                 } else {
                     data_validation.setText("Saved device =" + address + ", with associate text= " + specifications_text + "in remote Server and local dataBase");
                 }
+                    break;
+                case 1:
+                    try {
+                        JSONObject json = new JSONObject(s);
+                        if(json.has("errorCode")){
+                            //Log.i("JSON:","ERROR CODE"+json.toString());
+                            specifications_text ="-1";
+                        }else{
+                            Log.i("JSON",json.toString());
+                            specifications_text=objectJsonManager.getMessageFromStringJson(json.toString());
+
+                        }
+                        Log.i("-----------SPECIFICATION-TEXT-------------",specifications_text);
+                         //Send to Service
+                        //Intent intent = new Intent(Constants.DEVICE_MESSAGE);
+                        //intent.putExtra("message", specifications_text);
+                        //context.sendBroadcast(intent);
+                    }catch(JSONException e){
+                        e.printStackTrace();
+                    }
                     break;
             }//fin switch
         }else{

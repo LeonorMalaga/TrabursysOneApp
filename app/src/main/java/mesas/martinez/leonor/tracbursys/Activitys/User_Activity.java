@@ -25,7 +25,7 @@ import java.lang.ref.WeakReference;
 
 import mesas.martinez.leonor.tracbursys.R;
 import mesas.martinez.leonor.tracbursys.model.Constants;
-import mesas.martinez.leonor.tracbursys.phoneSensor.Beta_BleService;
+import mesas.martinez.leonor.tracbursys.Services.Beta_BleService;
 
 
 /**
@@ -231,8 +231,13 @@ public class User_Activity extends ActionBarActivity {
     @Override
     protected void onStart() {
         super.onStart();
+        SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        workMode = sharedPrefs.getString(Constants.WORKMODE, "1");
+        if (workMode.equals("1")) {
+            startActivity(new Intent(getApplicationContext(), Installer_Activity.class));
+        }else{
         bindService(mServiceIntent, mConnection, BIND_AUTO_CREATE);
-        Log.d("------DENTRO------", "----ON--Start----");
+        Log.d("------DENTRO------", "----ON--Start----");}
     }
 
     @Override

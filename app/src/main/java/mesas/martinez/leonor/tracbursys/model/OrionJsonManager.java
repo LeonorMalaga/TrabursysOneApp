@@ -2,11 +2,14 @@ package mesas.martinez.leonor.tracbursys.model;
 
 import android.util.Log;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+
+import mesas.martinez.leonor.tracbursys.comunication.HTTP_JSON_POST;
 
 /**
  * Created by paco on 22/07/2015.
@@ -17,15 +20,28 @@ public class OrionJsonManager {
     private String latitude;
     private String longitude;
     private String message;
-    private String coberageAlert;
+    private String coverageAlert;
     private String projectName;
     private String installerDNIorNIF;
     private String date;
     private String deviceName;
    // private JSONObject json;
    private String json;
+    //Default Constructor
+    public OrionJsonManager(){
+        type="Anonymous";
+        id="-1";
+        latitude="0";
+        longitude="0";
+        message=" ";
+        coverageAlert="0";
+        projectName="Anonymous";
+        installerDNIorNIF="Anonymous";
+        date="00000000";
+        deviceName="Anonymous";
+    }
   //Constructor to query message from id
-    public OrionJsonManager(String type, String id){
+    public String SetJSONtoGetMessage(String type, String id){
         this.type = type;
         this.id = id;
         json="{  \n" +
@@ -33,23 +49,25 @@ public class OrionJsonManager {
                 "  {\n" +
                 "    \"type\": \"" + type + "\",\n" +
                 "    \"isPattern\": \"false\",\n" +
-                "    \"id\": \"" + id + "\",\n" +
+                "    \"id\": \"" + id + "\"\n" +
+                "  }\n" +
+                "  ],\n" +
                 "    \"attributes\": [\n" +
                 "     \"message\"\n" +
                 "    ]\n" +
                 " }\n" ;
-
+        return json;
     };
 
 
 //Constructor to create entity
-    public OrionJsonManager(String type, String id, String latitude, String longitude, String message, String coberageAlert, String installerDNIorNIF, String projectName, String deviceName) {
+    public String SetJSONtoCreateEntity(String type, String id, String latitude, String longitude, String message, String coverageAlert, String installerDNIorNIF, String projectName, String deviceName) {
         this.type = type;
         this.id = id;
         this.latitude = latitude;
         this.longitude = longitude;
         this.message = message;
-        this.coberageAlert = coberageAlert;
+        this.coverageAlert = coverageAlert;
         this.projectName = projectName;
         this.installerDNIorNIF = installerDNIorNIF;
         this.deviceName=deviceName;
@@ -85,7 +103,7 @@ public class OrionJsonManager {
                     "    {\n" +
                     "      \"name\": \"coberageAlert \",\n" +
                     "      \"type\": \"dBm\",\n" +
-                    "      \"value\": \""+coberageAlert+"\"\n" +
+                    "      \"value\": \""+coverageAlert+"\"\n" +
                     "    },\n" +
                     "    {\n" +
                     "      \"name\": \""+shortDate+"\",\n" +
@@ -107,7 +125,7 @@ public class OrionJsonManager {
                     "  ],\n" +
                     "  \"updateAction\": \"APPEND\"\n" +
                     " }\n" ;
-
+        return json;
    }
 
     public String getStringJson() {
@@ -134,8 +152,8 @@ public class OrionJsonManager {
         return message;
     }
 
-    public String getCoberageAlert() {
-        return coberageAlert;
+    public String getCoverageAlert() {
+        return coverageAlert;
     }
 
     public String getProjectName() {
@@ -154,21 +172,35 @@ public class OrionJsonManager {
         return deviceName;
     }
 
-    public String getMessageFromStringJson(String json){
-        String status="400";
+    public String getMessageFromStringJson(String answer){
         String message="\n";
+        JSONObject reader;
+        JSONObject contextElement;
+        JSONObject JsonMessage;
+        JSONObject JsoncontextResponses;
+        JSONArray contextResponses;
+        JSONArray attributes;
         try {
-            JSONObject reader= new JSONObject(json);
-            status=reader.getJSONObject("statusCode").getString("code");
-            message=reader.getJSONObject("message").getString("value");
+            reader= new JSONObject(answer);
+       if(reader.has("errorCode")){
+           Log.i("Received Server Error",answer);
+           return "-1";
+       }else{
+           contextResponses=reader.getJSONArray("contextResponses");
+           message=contextResponses.getString(0);
+           //Log.i("JSON ARRAY 0 ",message);
+           JsoncontextResponses= new JSONObject(message);
+           contextElement=JsoncontextResponses.getJSONObject("contextElement");
+           attributes=contextElement.getJSONArray("attributes");
+           message=attributes.getString(0);
+           //Log.i("JSON ARRAY 1 ",message);
+           JsonMessage= new JSONObject(message);
+           message=JsonMessage.getString("value");
+           //Log.i("JSON ARRAY 2 ",message);
+       return message;}
         } catch (JSONException e) {
             e.printStackTrace();
+            return "-1";
         }
-       if(status!="200"){
-           Log.i("Received Server Error",json);
-           return "-1";
-
-       }else{
-       return message;}
     }
 }
