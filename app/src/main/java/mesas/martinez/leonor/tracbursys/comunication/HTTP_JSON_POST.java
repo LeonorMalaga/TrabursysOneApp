@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.preference.PreferenceManager;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
@@ -152,9 +153,9 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
             e.printStackTrace();
             return error;
         }
-        if(gender.index ==1) {
-            this.onPostExecute(result);
-       }
+     if(gender.index ==1) {
+           this.onPostExecute(result);
+      }
         return result;
     }
 
@@ -174,7 +175,7 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
                 String mlongitude = objectJsonManager.getLongitude();
                 String name = objectJsonManager.getDeviceName();
                  specifications_text= objectJsonManager.getMessage();
-                String rssi = objectJsonManager.getCoberageAlert();
+                String rssi = objectJsonManager.getCoverageAlert();
                 String project_name = objectJsonManager.getProjectName();
 
                 //Work with Database
@@ -205,11 +206,12 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
                             specifications_text=objectJsonManager.getMessageFromStringJson(json.toString());
 
                         }
-                        Log.i("-----------SPECIFICATION-TEXT-------------",specifications_text);
+                        //Log.i("-----------SPECIFICATION-TEXT-------------",specifications_text);
                          //Send to Service
-                        //Intent intent = new Intent(Constants.DEVICE_MESSAGE);
-                        //intent.putExtra("message", specifications_text);
-                        //context.sendBroadcast(intent);
+                        Intent intent = new Intent(Constants.DEVICE_MESSAGE);
+                        intent.putExtra("message", specifications_text);
+                        LocalBroadcastManager.getInstance(context).sendBroadcastSync(intent);
+                        Log.i("-----------INTENT Was SEND-------------",specifications_text);
                     }catch(JSONException e){
                         e.printStackTrace();
                     }

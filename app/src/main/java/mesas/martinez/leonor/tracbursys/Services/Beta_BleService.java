@@ -16,6 +16,7 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.preference.PreferenceManager;
 import android.speech.tts.TextToSpeech;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -75,18 +76,21 @@ public class Beta_BleService extends Service implements BluetoothAdapter.LeScanC
         mHandler = new IncomingHandler(this);
         mMessenger = new Messenger(mHandler);
     }
+    private BroadcastReceiver mMessageReceiver=new BroadcastReceiver(){
 
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            toSpeak=intent.getStringExtra("message");
+            Log.i("-----------INTENT received-------------",toSpeak);
+            speakTheText(toSpeak);
+        }
+    };
     @Override
     public void onCreate() {
 //to can reproduce the messages
+        toSpeak = "Beacon was found ";
         tts = new TextToSpeech(this, this);
         tts.setSpeechRate(0.5f);
-//reguister the Broadcast Receiver to obtain the message from the asynctask
-        IntentFilter filter=new IntentFilter(Constants.DEVICE_MESSAGE);
-        MessageReceiver receiver=new MessageReceiver();
-        registerReceiver(receiver, filter);
-        Log.v(TAG, "---oncreate_service--------------");
-        toSpeak = "Beacon was found ";
         super.onCreate();
     }
 
@@ -98,11 +102,14 @@ public class Beta_BleService extends Service implements BluetoothAdapter.LeScanC
             tts.stop();
             tts.shutdown();
         }
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mMessageReceiver);
         super.onDestroy();
     }
 
     @Override
     public IBinder onBind(Intent intent) {
+        LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(Constants.DEVICE_MESSAGE));
+        Log.i("-----------Received Was REGISTERED-------------","**BROADCAST**");
         return mMessenger.getBinder();
     }
 
@@ -194,7 +201,7 @@ public class Beta_BleService extends Service implements BluetoothAdapter.LeScanC
                 OrionJsonManager jsonManager=new OrionJsonManager() ;
                 String jsonString=jsonManager.SetJSONtoGetMessage("BLE", address);
                 //String query="/ngsi10/updateContext";
-              new HTTP_JSON_POST(getApplicationContext(),jsonManager).execute();
+               new HTTP_JSON_POST(this, jsonManager).execute();
                 //The message will be receiver in the BroadcastReceiver.
                  //toSpeak = deviceaux.getDeviceSpecification();
                 Log.d(TAG, "------device is save---- at date----:" + toSpeak);
@@ -308,11 +315,14 @@ public class Beta_BleService extends Service implements BluetoothAdapter.LeScanC
     public void onInit(int status) {
         Log.v(TAG, "---------------oninit----------------");
         if (status == TextToSpeech.SUCCESS) {
+
             int result = tts.setLanguage(Locale.ENGLISH);
             if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
                 Toast.makeText(this, "This Language is not supported", Toast.LENGTH_LONG).show();
             } else {
+
                 Toast.makeText(this, "Ready to Speak", Toast.LENGTH_LONG).show();
+
             }
 
         } else {
@@ -324,13 +334,6 @@ public class Beta_BleService extends Service implements BluetoothAdapter.LeScanC
     private void speakTheText(String textToSpeak) {
         tts.speak(textToSpeak, TextToSpeech.QUEUE_FLUSH, null);
     }
-  //-----------------------------------Sub-Class-------------------------------------//
-    private class MessageReceiver extends BroadcastReceiver{
-      @Override
-      public void onReceive(Context context, Intent intent) {
-          toSpeak=intent.getStringExtra("message");
-          speakTheText(toSpeak);
-      }
-  }
+
 
 }
