@@ -91,7 +91,7 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
         //Http petition to create a new instance in Orion
         //query="/ngsi10/updateContext";
         stringUrl="http://"+stringUrl+gender.query;
-       // Log.i("-----HTTP_JSON_POST url:----",stringUrl);
+      // Log.i("-----HTTP_JSON_POST url:----",stringUrl);
         try{
             url=new URL(stringUrl);
         }catch(MalformedURLException e){
@@ -202,7 +202,7 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
                             //Log.i("JSON:","ERROR CODE"+json.toString());
                             specifications_text ="-1";
                         }else{
-                            Log.i("JSON",json.toString());
+                            //Log.i("JSON",json.toString());
                             specifications_text=objectJsonManager.getMessageFromStringJson(json.toString());
 
                         }

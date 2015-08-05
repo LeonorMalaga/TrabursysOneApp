@@ -33,7 +33,7 @@ import mesas.martinez.leonor.tracbursys.model.Device;
 import mesas.martinez.leonor.tracbursys.model.DeviceDAO;
 import mesas.martinez.leonor.tracbursys.model.OrionJsonManager;
 
-public class Beta_BleService extends Service implements BluetoothAdapter.LeScanCallback, TextToSpeech.OnInitListener {
+public class SpeechBluService extends Service implements BluetoothAdapter.LeScanCallback, TextToSpeech.OnInitListener {
     public static final String TAG = "-----------------BleService------------";
     public static final int MSG_REGISTER = 1;
     public static final int MSG_UNREGISTER = 2;
@@ -43,7 +43,6 @@ public class Beta_BleService extends Service implements BluetoothAdapter.LeScanC
     public static final int MSG_STOP_SCAN = 6;
     private static final long SCAN_PERIOD = 1000;
     private static final long WAIT_PERIOD = 20000;
-    private String toSpeak;
     private String address;
     private String string_rssi;
     private String old_address;
@@ -51,14 +50,17 @@ public class Beta_BleService extends Service implements BluetoothAdapter.LeScanC
     public static final String KEY_MAC_ADDRESSES = "KEY_MAC_ADDRESSES";
     private Device deviceaux;
     private DeviceDAO deviceDAO;
+    OrionJsonManager jsonManager;
     int first;
+
     private static boolean start = true;
+    private String toSpeak;
     private TextToSpeech tts;
-    private final IncomingHandler mHandler;
+
     private final Messenger mMessenger;
+    private final IncomingHandler mHandler;
     private final List<Messenger> mClients = new LinkedList<Messenger>();
     private final Map<String, BluetoothDevice> mDevices = new HashMap<String, BluetoothDevice>();
-
     public enum State {
         UNKNOWN,
         IDLE,
@@ -72,7 +74,7 @@ public class Beta_BleService extends Service implements BluetoothAdapter.LeScanC
     private BluetoothAdapter mBluetooth = null;
     private State mState = State.UNKNOWN;
 
-    public Beta_BleService() {
+    public SpeechBluService() {
         mHandler = new IncomingHandler(this);
         mMessenger = new Messenger(mHandler);
     }
@@ -87,42 +89,52 @@ public class Beta_BleService extends Service implements BluetoothAdapter.LeScanC
     };
     @Override
     public void onCreate() {
+        LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(Constants.DEVICE_MESSAGE));
 //to can reproduce the messages
         toSpeak = "Beacon was found ";
         tts = new TextToSpeech(this, this);
         tts.setSpeechRate(0.5f);
         super.onCreate();
     }
-
+    private void mstop(){
+        if(start!=false){
+            start = false;
+            mState = State.DISCONNECTING;
+            // Do Not forget to Stop the TTS Engine when you do not require it
+            if (tts != null) {
+                tts.stop();
+                tts.shutdown();
+            }
+            LocalBroadcastManager.getInstance(this).unregisterReceiver(mMessageReceiver);
+        }
+    }
     @Override
     public void onDestroy() {
-        start = false;
-        // Do Not forget to Stop the TTS Engine when you do not require it
-        if (tts != null) {
-            tts.stop();
-            tts.shutdown();
-        }
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(mMessageReceiver);
+      mstop();
         super.onDestroy();
     }
 
     @Override
+    public boolean onUnbind(Intent intent) {
+        mstop();
+        return super.onUnbind(intent);
+    }
+
+    @Override
     public IBinder onBind(Intent intent) {
-        LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(Constants.DEVICE_MESSAGE));
-        Log.i("-----------Received Was REGISTERED-------------","**BROADCAST**");
         return mMessenger.getBinder();
     }
 
     private static class IncomingHandler extends Handler {
-        private final WeakReference<Beta_BleService> mService;
+        private final WeakReference<SpeechBluService> mService;
 
-        public IncomingHandler(Beta_BleService service) {
-            mService = new WeakReference<Beta_BleService>(service);
+        public IncomingHandler(SpeechBluService service) {
+            mService = new WeakReference<SpeechBluService>(service);
         }
 
         @Override
         public void handleMessage(Message msg) {
-            Beta_BleService service = mService.get();
+            SpeechBluService service = mService.get();
             if (service != null) {
                 switch (msg.what) {
                     case MSG_REGISTER:
@@ -173,12 +185,12 @@ public class Beta_BleService extends Service implements BluetoothAdapter.LeScanC
             mHandler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    Beta_BleService.this.start();
+                    SpeechBluService.this.start();
                 }
             }, SCAN_PERIOD);
-            //seconf find
-            mBluetooth.stopLeScan(Beta_BleService.this);
-            Beta_BleService.this.start();
+            //second find
+            mBluetooth.stopLeScan(SpeechBluService.this);
+            SpeechBluService.this.start();
             Log.d(TAG, "------------------Start second time-----------------------\n\n\n ");
         }
     }
@@ -198,13 +210,14 @@ public class Beta_BleService extends Service implements BluetoothAdapter.LeScanC
             if (!old_address.equals(address)) {
                 deviceaux = deviceDAO.getDeviceByAddress(device.getAddress().toString());
                 //Obtain text to server
-                OrionJsonManager jsonManager=new OrionJsonManager() ;
+                jsonManager=new OrionJsonManager() ;
                 String jsonString=jsonManager.SetJSONtoGetMessage("BLE", address);
                 //String query="/ngsi10/updateContext";
-               new HTTP_JSON_POST(this, jsonManager).execute();
+                new HTTP_JSON_POST(this, jsonManager).execute();
+                Log.d(TAG, "------HTTP_JSON_POST.execute----:" + toSpeak);
                 //The message will be receiver in the BroadcastReceiver.
                  //toSpeak = deviceaux.getDeviceSpecification();
-                Log.d(TAG, "------device is save---- at date----:" + toSpeak);
+
                 //Update database
                 //if The server not respond, tray to obtain tex to database
                 //toSpeak = deviceaux.getDeviceSpecification();
@@ -225,13 +238,16 @@ public class Beta_BleService extends Service implements BluetoothAdapter.LeScanC
                 Integer auxold = Integer.decode(old_string_rssi);
                 Integer aux = Integer.decode(string_rssi);
                 Integer rest = auxold - aux;
-                int primitiverest = rest.intValue();
-                Log.d(TAG, "-----------Integer valur--->: " + rest + "-----------Int valur--->: " + primitiverest);
-                if (primitiverest > 10) {
-                    deviceaux = deviceDAO.getDeviceByAddress(device.getAddress().toString());
-                    toSpeak = deviceaux.getDeviceSpecification();
-                    Log.d(TAG, "------device is save---- at date----:" + toSpeak);
-                    speakTheText(toSpeak);
+                //int primitiverest = rest.intValue();
+                Log.d(TAG, "-------"+auxold+"-"+aux+"--->: " + rest);
+                if (rest > 10 || rest < -10) {
+//                    Log.d(TAG, "------device Detecte AGAIN---to Speak---:" + toSpeak);
+//
+//                    deviceaux = deviceDAO.getDeviceByAddress(device.getAddress().toString());
+//                    toSpeak = deviceaux.getDeviceSpecification();
+//                    speakTheText(toSpeak);
+                    new HTTP_JSON_POST(this, jsonManager).execute();
+                    Log.d(TAG, "------HTTP_JSON_POST.execute----:" + toSpeak);
                     PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
                             .edit()
                             .putString(Constants.DEVICE_ADDRESS, address)
@@ -282,7 +298,7 @@ public class Beta_BleService extends Service implements BluetoothAdapter.LeScanC
             @Override
             public void run() {
                 if (mState == State.SCANNING) {
-                    mBluetooth.stopLeScan(Beta_BleService.this);
+                    mBluetooth.stopLeScan(SpeechBluService.this);
                     setState(State.IDLE);
                     Message msg = Message.obtain(null, MSG_DEVICE_FOUND);
                     if (msg != null) {
@@ -315,14 +331,11 @@ public class Beta_BleService extends Service implements BluetoothAdapter.LeScanC
     public void onInit(int status) {
         Log.v(TAG, "---------------oninit----------------");
         if (status == TextToSpeech.SUCCESS) {
-
             int result = tts.setLanguage(Locale.ENGLISH);
             if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
                 Toast.makeText(this, "This Language is not supported", Toast.LENGTH_LONG).show();
             } else {
-
                 Toast.makeText(this, "Ready to Speak", Toast.LENGTH_LONG).show();
-
             }
 
         } else {
@@ -332,6 +345,7 @@ public class Beta_BleService extends Service implements BluetoothAdapter.LeScanC
     }
 
     private void speakTheText(String textToSpeak) {
+        Log.v("--SPEAKtheTEXT---", textToSpeak);
         tts.speak(textToSpeak, TextToSpeech.QUEUE_FLUSH, null);
     }
 

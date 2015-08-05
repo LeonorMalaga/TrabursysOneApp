@@ -6,6 +6,7 @@ package mesas.martinez.leonor.tracbursys.model;
  * Created by root on 16/01/15.
  */
 public class Constants {
+    public static final String TAG="Filtrar";
     //----------------------- KNOW FIRST TIME -------------------------------------//
     public static final String FIRST="Leonor.martinez.mesas.controller.activity.FIRST";
     public static final String FIRSTINSTALLER="Leonor.martinez.mesas.controller.activity.FIRSTINSTALLER";
@@ -28,7 +29,9 @@ public class Constants {
 public static final String SPINNER_NAME="Leonor.martinez.mesas.installer.activity.SPINNER_INDEX";
 //---------------------------------Constans For UserMode---------------------------------------------//
 public static final String SERVICE_STATE="Leonor.martinez.mesas.user.activity.SERVICE_STATE";
+public static final String SERVICE_STOP="Leonor.martinez.mesas.user.activity.SERVICE_STOP";
 public static final String DEVICE_ADDRESS="Leonor.martinez.mesas.user.activity.DEVICE_ADDRESS";
 public static final String DEVICE_RSSI="Leonor.martinez.mesas.user.activity.DEVICE_RSSI";
 public static final String DEVICE_MESSAGE="Leonor.martinez.mesas.user.activity.DEVICE_RSSI";
+public static final String BLUETOOTH_OFF="Leonor.martinez.mesas.user.activity.BLUETOOTH_OFF";
 }

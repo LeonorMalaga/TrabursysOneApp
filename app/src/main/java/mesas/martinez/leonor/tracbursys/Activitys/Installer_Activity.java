@@ -113,7 +113,7 @@ public class Installer_Activity extends ActionBarActivity implements AdapterView
         workMode = sharedPrefs.getString(Constants.WORKMODE, "1");
         Log.d("------------NOT FIRST--WOORK MODE----------: " + workMode.equals("0"), workMode);
         if (workMode.equals("0")) {
-            startActivity(new Intent(getApplicationContext(), User_Activity.class));
+            startActivity(new Intent(getApplicationContext(), NewUser_Activity.class));
         } else {
             specifications = (EditText) this.findViewById(R.id.device_specification_editText);
             data_validation = (TextView) this.findViewById(R.id.intaller_response_textView);

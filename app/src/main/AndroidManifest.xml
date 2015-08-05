@@ -26,6 +26,9 @@
             android:name=".Activitys.User_Activity"
             android:label="@string/app_name"></activity>
         <activity
+            android:name=".Activitys.NewUser_Activity"
+            android:label="@string/app_name"></activity>
+        <activity
             android:name=".Activitys.Installer_Activity"
             android:label="@string/app_name"></activity>
         <activity
@@ -45,11 +48,14 @@
             android:exported="false"></service>
 
         <service
-            android:name=".Services.Beta_BleService"
+            android:name=".Services.SpeechBluService"
             android:enabled="true"
             android:exported="false">
             </service>
-
+        <service
+            android:name=".Services.NewSpeechBluService"
+            android:exported="false">
+        </service>
     </application>
 
 </manifest>
