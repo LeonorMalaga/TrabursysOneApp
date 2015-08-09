@@ -56,9 +56,10 @@
     <string name="data_validation">Data Validation:</string>
     <!-- activity-and-service-for-user -->
     <string name="user_first_textView">Press the button to start ,the service detection of I_beacons.</string>
+    <string name="user_first_text">Press the button to stop ,the service detection of I_beacons.</string>
     <string name="can_detect_Ibeacon">I-BEACON DETECTION SERVICE INITIATED IN BACKGROUND.</string>
     <string name="service_stopped"> SERVICE STOPPED </string>
-    <string name="user_second_textView">You can exit to the app. You will be notified of the presence of registered i-beacons, near of you.</string>
+    <string name="user_second_textView">You can abandon this view, the service will continue running. You will be notified of the presence of registered i-beacons, near of you.</string>
     <string name="user_third_textView"> For stop the service, press  "back button" </string>
     <string name="user_fourth_textView"> and wait a few seconds. Press OK in the POP_UP</string>
     <string name="can_not_detect_Ibeacon"> NOW YOU CAN NOT DETECT I-BEACONS </string>

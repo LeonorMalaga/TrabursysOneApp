@@ -33,6 +33,7 @@ import java.io.BufferedReader;
 import java.io.DataOutputStream;
 
 import mesas.martinez.leonor.tracbursys.R;
+import mesas.martinez.leonor.tracbursys.Services.GPSservice;
 import mesas.martinez.leonor.tracbursys.model.Constants;
 import mesas.martinez.leonor.tracbursys.model.Device;
 import mesas.martinez.leonor.tracbursys.model.DeviceDAO;
@@ -79,9 +80,11 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
     private OrionJsonManager objectJsonManager;
     private Context context;
     TextView data_validation;
+    private String address="0";
     //--------------------------Constructor-------------------------------//
-    public HTTP_JSON_POST(Context context, OrionJsonManager object){
+    public HTTP_JSON_POST(Context context, OrionJsonManager object, String address){
 
+        this.address=address;
         this.context=context;
         this.gender=gender.GET;
         this.objectJsonManager=object;
@@ -196,24 +199,62 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
                 }
                     break;
                 case 1:
+                    specifications_text=" ";
                     try {
                         JSONObject json = new JSONObject(s);
                         if(json.has("errorCode")){
-                            //Log.i("JSON:","ERROR CODE"+json.toString());
-                            specifications_text ="-1";
+                            //find text in database
+                          specifications_text=getFromDatabase(s);
                         }else{
-                            //Log.i("JSON",json.toString());
+                            Log.i("JSON",json.toString());
                             specifications_text=objectJsonManager.getMessageFromStringJson(json.toString());
+                            //update text in database
+                            try {
+                                deviceDAO = new DeviceDAO(context);
+                                deviceDAO.open();
+                                deviceaux = deviceDAO.getDeviceByAddress(this.address);
+                                if (deviceaux.get_id() != -1) {
+                                    //The device exists
+                                    deviceaux.setDeviceSpecification(specifications_text);
+                                    deviceDAO.update(deviceaux);
+                                    Log.i("JSON:","DEVICE UPDATE"+this.address+" "+specifications_text);
+                                } else {
+                                    //new database entry
+                                    //Provisional, I have to Implement in OrionJsonManager, methods to obtaint the parameters
+                                    GPSservice gps = new GPSservice(context);
+                                    // check if GPS enabled
+                                    double latitude=0;
+                                    double longitude=0;
+                                    if (gps.canGetLocation()) {
+                                        latitude = gps.getLatitude();
+                                        longitude = gps.getLongitude();
+                                        Log.d("--LocationOk---", "---");
+                                        mlatitude = String.valueOf(latitude);
+                                        mlongitude = String.valueOf(longitude);
+                                    }
+                                    deviceaux=new Device(12345678, this.address, String.valueOf(latitude),String.valueOf(longitude),"Anonimous", specifications_text, "-78") ;
+                                    deviceDAO.create(deviceaux);
+                                    Log.i("JSON:","NEW DEVICE SAVE"+this.address+" "+specifications_text);
+                                }
+                            }catch(Exception e) {
+                                Log.i("JSON:",json.toString()+"ERROR CODE Database "+e.getMessage());
+                            }finally {
+                                deviceDAO.close();
+                            }
 
                         }
+
+                    }catch(JSONException e){
+                        Log.i("-----------ERROR Convirtiendo a JSON-------------",s);
+                        specifications_text=getFromDatabase(s);
+                        //e.printStackTrace();
+                    }finally {
                         //Log.i("-----------SPECIFICATION-TEXT-------------",specifications_text);
-                         //Send to Service
+                        //Send to Service
                         Intent intent = new Intent(Constants.DEVICE_MESSAGE);
                         intent.putExtra("message", specifications_text);
                         LocalBroadcastManager.getInstance(context).sendBroadcastSync(intent);
                         Log.i("-----------INTENT Was SEND-------------",specifications_text);
-                    }catch(JSONException e){
-                        e.printStackTrace();
                     }
                     break;
             }//fin switch
@@ -233,5 +274,20 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
        }
         //Return full string
         return total.toString();
+    }
+    private String getFromDatabase(String s){
+        String text=" ";
+        try {
+            deviceDAO = new DeviceDAO(context);
+            deviceDAO.open();
+            deviceaux = deviceDAO.getDeviceByAddress(this.address);
+            text = deviceaux.getDeviceSpecification();
+        }catch(Exception e) {
+            Log.i("JSON:",s+"ERROR CODE Database "+e.getMessage());
+            text = " ";
+        }finally {
+            deviceDAO.close();
+        }
+        return text;
     }
 }

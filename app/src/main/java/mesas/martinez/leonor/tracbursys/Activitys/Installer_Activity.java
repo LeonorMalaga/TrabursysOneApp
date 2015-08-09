@@ -37,7 +37,7 @@ import mesas.martinez.leonor.tracbursys.model.MySQLiteHelper;
 import mesas.martinez.leonor.tracbursys.model.OrionJsonManager;
 import mesas.martinez.leonor.tracbursys.model.Project;
 import mesas.martinez.leonor.tracbursys.model.ProjectDAO;
-import mesas.martinez.leonor.tracbursys.Services.GPSTracker;
+import mesas.martinez.leonor.tracbursys.Services.GPSservice;
 
 /**
  * Created by leonor on 29/01/15.
@@ -73,7 +73,7 @@ public class Installer_Activity extends ActionBarActivity implements AdapterView
     private static final long SCAN_TIMEOUT = 5000;
     private String mlatitude = "0";
     private String mlongitude = "0";
-    private GPSTracker gps;
+    private GPSservice gps;
     private MyBledevice ble;
     private String address;
     private String deviceName;
@@ -113,7 +113,7 @@ public class Installer_Activity extends ActionBarActivity implements AdapterView
         workMode = sharedPrefs.getString(Constants.WORKMODE, "1");
         Log.d("------------NOT FIRST--WOORK MODE----------: " + workMode.equals("0"), workMode);
         if (workMode.equals("0")) {
-            startActivity(new Intent(getApplicationContext(), NewUser_Activity.class));
+            startActivity(new Intent(getApplicationContext(), User_Activity.class));
         } else {
             specifications = (EditText) this.findViewById(R.id.device_specification_editText);
             data_validation = (TextView) this.findViewById(R.id.intaller_response_textView);
@@ -175,7 +175,7 @@ public class Installer_Activity extends ActionBarActivity implements AdapterView
                     ble = mLeDeviceListAdapter.mygetDevice(pos);
                     Log.d("------->Device select---Adrees->" + ble.device.getAddress(), "---->rssi-->" + ble.rssi);
                     data_validation.setVisibility(View.VISIBLE);
-                    gps = new GPSTracker(getApplicationContext());
+                    gps = new GPSservice(getApplicationContext());
                     // check if GPS enabled
                     if (gps.canGetLocation()) {
                         double latitude = gps.getLatitude();

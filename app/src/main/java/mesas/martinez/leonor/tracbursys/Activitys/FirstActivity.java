@@ -43,7 +43,7 @@ public class FirstActivity extends ActionBarActivity {
             workMode = sharedPrefs.getString(Constants.WORKMODE, "1");
             Log.d("-NOT FIRST-: ", workMode);
             if (workMode.equals("0")) {
-                startActivity(new Intent(getApplicationContext(), NewUser_Activity.class));
+                startActivity(new Intent(getApplicationContext(), User_Activity.class));
             } else {
                 startActivity(new Intent(getApplicationContext(), Installer_Activity.class));
             }
@@ -63,7 +63,7 @@ public class FirstActivity extends ActionBarActivity {
             @Override
             public void onClick(View view) {
                 if (workMode.equals("0")) {
-                    startActivity(new Intent(getApplicationContext(), NewUser_Activity.class));
+                    startActivity(new Intent(getApplicationContext(), User_Activity.class));
                 } else {
                     startActivity(new Intent(getApplicationContext(), Installer_Activity.class));
                 }

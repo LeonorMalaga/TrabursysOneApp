@@ -17,7 +17,7 @@ import android.os.IBinder;
 import android.provider.Settings;
 import android.util.Log;
 
-public class GPSTracker extends Service implements LocationListener {
+public class GPSservice extends Service implements LocationListener {
 
     private final Context mContext;
     // flag for GPS status
@@ -36,7 +36,7 @@ public class GPSTracker extends Service implements LocationListener {
     // Declaring a Location Manager
     protected LocationManager locationManager;
 
-    public GPSTracker(Context context) {
+    public GPSservice(Context context) {
         this.mContext = context;
         Log.d("---contesto selecionado------", "--ok--");
         getLocation();
@@ -110,7 +110,7 @@ public class GPSTracker extends Service implements LocationListener {
      */
     public void stopUsingGPS() {
         if (locationManager != null) {
-            locationManager.removeUpdates(GPSTracker.this);
+            locationManager.removeUpdates(GPSservice.this);
         }
     }
 

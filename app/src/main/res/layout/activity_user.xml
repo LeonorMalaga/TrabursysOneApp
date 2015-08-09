@@ -17,7 +17,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/user_first_textView"
+            android:text="@string/user_first_text"
             android:textAppearance="?android:attr/textAppearanceLarge"
             android:layout_gravity="center_horizontal"
             android:id="@+id/user_first_textView"
@@ -37,7 +37,7 @@
         <Button
             android:layout_width="200dp"
             android:layout_height="wrap_content"
-            android:text="@string/start_service"
+            android:text="@string/stop_service"
             android:id="@+id/user_button"
             android:layout_gravity="center_horizontal" />
 
