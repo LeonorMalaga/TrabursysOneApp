@@ -60,8 +60,8 @@
     <string name="can_detect_Ibeacon">I-BEACON DETECTION SERVICE INITIATED IN BACKGROUND.</string>
     <string name="service_stopped"> SERVICE STOPPED </string>
     <string name="user_second_textView">You can abandon this view, the service will continue running. You will be notified of the presence of registered i-beacons, near of you.</string>
-    <string name="user_third_textView"> For stop the service, press  "back button" </string>
-    <string name="user_fourth_textView"> and wait a few seconds. Press OK in the POP_UP</string>
+    <string name="stopping"> Stopping the service, Bluetooth is OFF </string>
+    <string name="turn_on_Bluetooth"> Please turn On your Bluetooth</string>
     <string name="can_not_detect_Ibeacon"> NOW YOU CAN NOT DETECT I-BEACONS </string>
     <string name="stop_service"> STOP SERVICE </string>
     <string name="start_service"> START SERVICE</string>

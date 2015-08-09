@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import mesas.martinez.leonor.tracbursys.R;
 import mesas.martinez.leonor.tracbursys.comunication.HTTP_JSON_POST;
 import mesas.martinez.leonor.tracbursys.model.Constants;
 import mesas.martinez.leonor.tracbursys.model.Device;
@@ -53,7 +54,7 @@ public static enum State {
 }
 
     private static final long SCAN_TIMEOUT = 5000;
-    private static final long WAIT_PERIOD = 10000;
+    private static final long WAIT_PERIOD = 5000;
     private final List<Messenger> mClients = new LinkedList<Messenger>();
     private final Map<String, BluetoothDevice> mDevices = new HashMap<String, BluetoothDevice>();
 
@@ -92,9 +93,20 @@ public static enum State {
         while (start) {
             try {
                 synchronized (this) {
+                    int count=0;
                     Log.d("onHandleIntent WHILE", "Start Scan");
                     this.startScan();
-                    this.wait(WAIT_PERIOD);
+                    if(mState.equals(State.BLUETOOTH_OFF)){
+                        if(count==5){
+                            String stopping=getResources().getString(R.string.stopping);
+                            Toast.makeText(this, stopping, Toast.LENGTH_LONG).show();
+                            this.wait(Constants.WAIT_TIME);
+                            mstop();
+                        }else{
+                        this.wait(WAIT_PERIOD*10);}
+                    }else{
+                        count=0;
+                    this.wait(WAIT_PERIOD);}
                 }
             } catch (InterruptedException e) {
                 Log.d("InterrupteException in While", "------------STOP----------");
@@ -215,8 +227,9 @@ public static enum State {
         }
         if (mBluetoothAdapter== null || !mBluetoothAdapter.isEnabled()) {
             this.setState(State.BLUETOOTH_OFF);
-            Toast.makeText(this, "Please turn On your Bluetooth", Toast.LENGTH_LONG).show();
-            this.wait(100);
+            String turn_on=getResources().getString(R.string.turn_on_Bluetooth);
+            Toast.makeText(this, turn_on, Toast.LENGTH_LONG).show();
+            this.wait(Constants.WAIT_TIME);
             //please trun on Bluetthoth sensor
             Intent intent = new Intent(Constants.BLUETOOTH_OFF);
             LocalBroadcastManager.getInstance(this).sendBroadcastSync(intent);

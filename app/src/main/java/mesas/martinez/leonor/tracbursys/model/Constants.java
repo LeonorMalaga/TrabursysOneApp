@@ -7,6 +7,7 @@ package mesas.martinez.leonor.tracbursys.model;
  */
 public class Constants {
     public static final String TAG="Filtrar";
+    public static final int WAIT_TIME=150;
     //----------------------- KNOW FIRST TIME -------------------------------------//
     public static final String FIRST="Leonor.martinez.mesas.controller.activity.FIRST";
     public static final String FIRSTINSTALLER="Leonor.martinez.mesas.controller.activity.FIRSTINSTALLER";
