@@ -50,7 +50,8 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
     //---------------------------Variables/Structures---------------------------------------------//
    public enum Gender{
       UPDATE_CREATE("/ngsi10/updateContext",0),
-      GET("/ngsi10/queryContext",1);
+      GET_MESSAGE("/ngsi10/queryContext",1),
+      GET("/ngsi10/queryContext",2);
         private String query;
         private int index;
         private Gender(String query, int index){
@@ -71,22 +72,25 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
     private String stringUrl;
     private String error;
     private Gender gender;
-
+    private JSONObject json;
+    TextView data_validation;
+    private String address="0";
+    private String message;
     //Variables to work with Database
     private Project projectaux;
     private ProjectDAO projectDAO;
+    private int project_id;
     private Device deviceaux;
     private DeviceDAO deviceDAO;
     private OrionJsonManager objectJsonManager;
     private Context context;
-    TextView data_validation;
-    private String address="0";
+
     //--------------------------Constructor-------------------------------//
     public HTTP_JSON_POST(Context context, OrionJsonManager object, String address){
 
         this.address=address;
         this.context=context;
-        this.gender=gender.GET;
+        this.gender=object.JsonGender;
         this.objectJsonManager=object;
         this.body=objectJsonManager.getStringJson();
         SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(context);
@@ -103,7 +107,7 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
     }
     public HTTP_JSON_POST(Context context, OrionJsonManager object,TextView data_validation){
         this.context=context;
-        this.gender=gender.UPDATE_CREATE;
+        this.gender=object.JsonGender;
         this.objectJsonManager=object;
         this.body=objectJsonManager.getStringJson();
         SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(context);
@@ -138,28 +142,27 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
             //execute and get response
             HttpResponse response=client.execute(httpPostFinal);
             result=inputStreamToString(response.getEntity().getContent());
-            //Log.i("HTTP_JSON_POST result:",result);
+            if(gender.index >0) {
+                this.onPostExecute(result);
+            }
         }catch(URISyntaxException e){
             error=e.getMessage();
             e.printStackTrace();
-            return error;
         } catch (UnsupportedEncodingException e) {
-            error=e.getMessage();
             e.printStackTrace();
-            return error;
+            error=e.getMessage();
         } catch (ClientProtocolException e) {
-            error=e.getMessage();
             e.printStackTrace();
-            return error;
+            error=e.getMessage();
         } catch (IOException e) {
-            error=e.getMessage();
             e.printStackTrace();
-            return error;
+            error=e.getMessage();
+        }catch(Exception e){
+            e.printStackTrace();
+            error=e.getMessage();
+        }finally {
+           return result;
         }
-     if(gender.index ==1) {
-           this.onPostExecute(result);
-      }
-        return result;
     }
 
     @Override
@@ -167,7 +170,8 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
         //Log.i("-------------HTTP_JSON_POST:--------------","Do onPostExecute");
         super.onPostExecute(s);
         //Log.i("HTTP_JSON_POST onPostExecute",s);
-        String specifications_text;
+        String message=" ";
+        Device mdevice;
         //If all go well, save the device in the Database
         if(s!="0"){
             switch(gender.index) {
@@ -177,89 +181,112 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
                 String mlatitude = objectJsonManager.getLatitude();
                 String mlongitude = objectJsonManager.getLongitude();
                 String name = objectJsonManager.getDeviceName();
-                 specifications_text= objectJsonManager.getMessage();
+                 message= objectJsonManager.getMessage();
                 String rssi = objectJsonManager.getCoverageAlert();
                 String project_name = objectJsonManager.getProjectName();
-
                 //Work with Database
                 projectDAO = new ProjectDAO(context);
                 projectDAO.open();
                 projectaux = projectDAO.getProjectByName(project_name);
                 projectDAO.close();
-                deviceaux = new Device(projectaux.get_id(), address, mlatitude, mlongitude, name, specifications_text, rssi);
+                deviceaux = new Device(projectaux.get_id(), address, mlatitude, mlongitude, name, message, rssi);
                 deviceDAO = new DeviceDAO(context);
                 deviceDAO.open();
                 int device_id = deviceDAO.create(deviceaux);
                 deviceDAO.close();
                 deviceaux.set_id(device_id);
                 if (device_id == -1) {
-                    data_validation.setText("ERROR:Saved device =" + address + ", with associate text= " + specifications_text + "in remote Server but it can save in local dataBase ");
+                    data_validation.setText("ERROR:Saved device =" + address + ", with associate text= " + message + "in remote Server but it can save in local dataBase ");
                 } else {
-                    data_validation.setText("Saved device =" + address + ", with associate text= " + specifications_text + "in remote Server and local dataBase");
+                    data_validation.setText("Saved device =" + address + ", with associate text= " + message + "in remote Server and local dataBase");
                 }
                     break;
                 case 1:
-                    specifications_text=" ";
                     try {
                         JSONObject json = new JSONObject(s);
                         if(json.has("errorCode")){
                             //find text in database
-                          specifications_text=getFromDatabase(s);
-                        }else{
-                            Log.i("JSON",json.toString());
-                            specifications_text=objectJsonManager.getMessageFromStringJson(json.toString());
-                            //update text in database
-                            try {
-                                deviceDAO = new DeviceDAO(context);
-                                deviceDAO.open();
-                                deviceaux = deviceDAO.getDeviceByAddress(this.address);
-                                if (deviceaux.get_id() != -1) {
-                                    //The device exists
-                                    deviceaux.setDeviceSpecification(specifications_text);
-                                    deviceDAO.update(deviceaux);
-                                    Log.i("JSON:","DEVICE UPDATE"+this.address+" "+specifications_text);
-                                } else {
-                                    //new database entry
-                                    //Provisional, I have to Implement in OrionJsonManager, methods to obtaint the parameters
-                                    GPSservice gps = new GPSservice(context);
-                                    // check if GPS enabled
-                                    double latitude=0;
-                                    double longitude=0;
-                                    if (gps.canGetLocation()) {
-                                        latitude = gps.getLatitude();
-                                        longitude = gps.getLongitude();
-                                        Log.d("--LocationOk---", "---");
-                                        mlatitude = String.valueOf(latitude);
-                                        mlongitude = String.valueOf(longitude);
-                                    }
-                                    deviceaux=new Device(12345678, this.address, String.valueOf(latitude),String.valueOf(longitude),"Anonimous", specifications_text, "-78") ;
-                                    deviceDAO.create(deviceaux);
-                                    Log.i("JSON:","NEW DEVICE SAVE"+this.address+" "+specifications_text);
+                          message=getFromDatabase(s);
+                        }else {
+                            Log.i("JSON", json.toString());
+                            message = objectJsonManager.getMessageFromStringJson(json.toString());
+                            if (existDevice()) {
+                                //update text in database
+                                this.updateMessage(message);
+                            } else {
+                                //Create Device
+                                //--------1 create mdevice------------
+                                double latitude = 0;
+                                double longitude = 0;
+                                GPSservice gps = new GPSservice(context);
+                                // check if GPS enabled
+                                if (gps.canGetLocation()) {
+                                    latitude = gps.getLatitude();
+                                    longitude = gps.getLongitude();
+                                    Log.d("--LocationOk---", "---");
+                                    mlatitude = String.valueOf(latitude);
+                                    mlongitude = String.valueOf(longitude);
                                 }
-                            }catch(Exception e) {
-                                Log.i("JSON:",json.toString()+"ERROR CODE Database "+e.getMessage());
-                            }finally {
-                                deviceDAO.close();
+                                mdevice = new Device(-1, this.address, String.valueOf(latitude),String.valueOf(longitude), "Anonimous", message, "-78");
+                                //--------------Fin create mdevice---------//
+                                this.updateProject(mdevice);
                             }
-
                         }
-
-                    }catch(JSONException e){
+                        }catch(JSONException e){
                         Log.i("-----------ERROR Convirtiendo a JSON-------------",s);
-                        specifications_text=getFromDatabase(s);
+                        message=getFromDatabase(s);
                         //e.printStackTrace();
                     }finally {
-                        //Log.i("-----------SPECIFICATION-TEXT-------------",specifications_text);
+                        //Log.i("-----------SPECIFICATION-TEXT-------------",message);
                         //Send to Service
                         Intent intent = new Intent(Constants.DEVICE_MESSAGE);
-                        intent.putExtra("message", specifications_text);
+                        intent.putExtra("message", message);
                         LocalBroadcastManager.getInstance(context).sendBroadcastSync(intent);
-                        Log.i("-----------INTENT Was SEND-------------",specifications_text);
+                        Log.i("-----------INTENT Was SEND-------------",message);
                     }
                     break;
+                case 2:
+                    try {
+                        JSONObject json = new JSONObject(s);
+                        if(json.has("errorCode")){
+                            //find text in database
+                            message=getFromDatabase(s);
+                        }else{
+                            Log.i("JSON",json.toString());
+                            mdevice=objectJsonManager.getDeviceFromStringJson(json.toString());
+                            project_id=mdevice.getprojecto_id();
+                            if(existDevice(project_id)){
+                                //update text in database
+                                this.updateDevice(mdevice);
+                            }else{
+                                this.updateProject(mdevice);
+
+                            }
+                            message=mdevice.getDeviceSpecification();
+                        }
+                    }catch(JSONException e){
+                        Log.i("-----------ERROR Convirtiendo a JSON-------------",s);
+                        message=getFromDatabase(s);
+                        //e.printStackTrace();
+                    }catch(Exception e) {
+                        Log.i("JSON:", json.toString() + "ERROR CODE Database ");
+
+                    }finally {
+                        //Log.i("-----------SPECIFICATION-TEXT-------------",message);
+                        //Send to Service
+                        Intent intent = new Intent(Constants.DEVICE_MESSAGE);
+                        intent.putExtra("message", message);
+                        LocalBroadcastManager.getInstance(context).sendBroadcastSync(intent);
+                        Log.i("-----------INTENT Was SEND-------------",message);
+                    }
+                    break;
+
             }//fin switch
         }else{
-            data_validation.setText("Remote Server error:"+error);
+            if(gender.index==0){
+            data_validation.setText("Remote Server error:"+error);}else{
+                Log.e("Remote Server error:",error);
+            }
         }
     }
 //-------------------Mi-Methods-------------------------------//
@@ -275,6 +302,7 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
         //Return full string
         return total.toString();
     }
+    //return the text associate to a device address
     private String getFromDatabase(String s){
         String text=" ";
         try {
@@ -290,4 +318,98 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
         }
         return text;
     }
+    //
+    private int updateProject(Device mydevice){
+        int result=-1;
+        int project_id=mydevice.getprojecto_id();
+        //update text in database
+        try {
+            deviceDAO = new DeviceDAO(context);
+            deviceDAO.open();
+            //is Device in my Database?
+            if(project_id==-1){
+                deviceaux = deviceDAO.getDeviceByAddress(this.address);
+                project_id=deviceaux.getprojecto_id();
+                mydevice.setprojecto_id(project_id);
+            }else{
+                deviceaux=deviceDAO.getDeviceByAddressAndProject(this.address,mydevice.getprojecto_id());
+            }
+
+            if (deviceaux.get_id() != -1) {
+                //The device exists
+                mydevice.set_id(deviceaux.get_id());
+                deviceDAO.update(mydevice);
+                Log.i("JSON:","DEVICE UPDATE"+this.address+" "+message);
+            } else {
+                //Be careful the project id  exits, int other case, create a new project
+                projectDAO=new ProjectDAO(context);
+                projectDAO.open();
+                projectaux= projectDAO.getProjectByID(project_id);
+                if(projectaux.get_id()==-1){
+                    //Create new project
+                    projectaux=projectDAO.getProjectByName("Default");
+                    project_id=projectaux.get_id();
+                    if(project_id==-1){
+                    projectaux=new Project("Default","0034667442487");
+                    project_id=projectaux.get_id();
+                    }
+                    mydevice.setprojecto_id(project_id);
+                }
+                result=deviceDAO.create(mydevice);
+                Log.i("JSON:","NEW DEVICE SAVE:"+this.address+" "+message+", in Project:"+projectaux.getmprojectName());
+            }
+
+        }finally {
+            projectDAO.close();
+            deviceDAO.close();
+        }
+        return result;
+    }
+
+    private boolean existDevice(){
+        boolean exist=false;
+        deviceDAO = new DeviceDAO(context);
+        deviceDAO.open();
+        deviceaux = deviceDAO.getDeviceByAddress(this.address);
+        project_id=deviceaux.getprojecto_id();
+        if (deviceaux.get_id() != -1) {
+            exist=true;
+        }
+        deviceDAO.close();
+        return exist;
+    }
+    private boolean existDevice(int id_project){
+        boolean exist=false;
+        deviceDAO = new DeviceDAO(context);
+        deviceDAO.open();
+        deviceaux = deviceDAO.getDeviceByAddressAndProject(this.address, id_project);
+        project_id=deviceaux.getprojecto_id();
+        if (deviceaux.get_id() != -1) {
+            exist=true;
+        }
+        deviceDAO.close();
+        return exist;
+    }
+    private int updateMessage(String message){
+        int result=-1;
+        deviceDAO = new DeviceDAO(context);
+        deviceDAO.open();
+        deviceaux = deviceDAO.getDeviceByAddress(this.address);
+        deviceaux.setDeviceSpecification(message);
+        project_id=deviceaux.getprojecto_id();
+        deviceDAO.update(deviceaux);
+        deviceDAO.close();
+        return deviceaux.get_id();
+    }
+    private int updateDevice(Device device){
+        int result=-1;
+        deviceDAO = new DeviceDAO(context);
+        deviceDAO.open();
+        deviceaux = deviceDAO.getDeviceByAddress(this.address);
+        device.set_id(deviceaux.get_id());
+        deviceDAO.update(device);
+        deviceDAO.close();
+        return deviceaux.get_id();
+    }
+
 }

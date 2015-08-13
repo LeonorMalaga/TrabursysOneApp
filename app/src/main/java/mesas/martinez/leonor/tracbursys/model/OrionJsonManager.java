@@ -25,6 +25,7 @@ public class OrionJsonManager {
     private String installerDNIorNIF;
     private String date;
     private String deviceName;
+    public HTTP_JSON_POST.Gender JsonGender;
    // private JSONObject json;
    private String json;
     //Default Constructor
@@ -44,6 +45,7 @@ public class OrionJsonManager {
     public String SetJSONtoGetMessage(String type, String id){
         this.type = type;
         this.id = id;
+        this.JsonGender=HTTP_JSON_POST.Gender.GET_MESSAGE;
         json="{  \n" +
                 "\"entities\": [\n" +
                 "  {\n" +
@@ -59,7 +61,23 @@ public class OrionJsonManager {
         return json;
     };
 
-
+    //Constructor to query message from id
+    public String SetJSONtoGetAttributes(String type, String id){
+        this.type = type;
+        this.id = id;
+        this.JsonGender=HTTP_JSON_POST.Gender.GET;
+        json="{  \n" +
+                "\"entities\": [\n" +
+                "  {\n" +
+                "    \"type\": \"" + type + "\",\n" +
+                "    \"isPattern\": \"false\",\n" +
+                "    \"id\": \"" + id + "\"\n" +
+                "  }\n" +
+                "  ],\n" +
+                "    \"attributes\": [ ]\n" +
+                " }\n" ;
+        return json;
+    };
 //Constructor to create entity
     public String SetJSONtoCreateEntity(String type, String id, String latitude, String longitude, String message, String coverageAlert, String installerDNIorNIF, String projectName, String deviceName) {
         this.type = type;
@@ -76,6 +94,7 @@ public class OrionJsonManager {
         Date d=new Date();
         this.date = sdf.format(d);
         String shortDate=s.format(d);
+        this.JsonGender=HTTP_JSON_POST.Gender.UPDATE_CREATE;
                json="{  \n" +
                     "\"contextElements\": [\n" +
                     "  {\n" +
@@ -171,7 +190,7 @@ public class OrionJsonManager {
     public String getDeviceName() {
         return deviceName;
     }
-
+//You can use this method only if you has used  SetJSONtoGetMessage
     public String getMessageFromStringJson(String answer){
         String message="\n";
         JSONObject reader;
@@ -196,12 +215,48 @@ public class OrionJsonManager {
            //Log.i("JSON ARRAY 1 ",message);
            JsonMessage= new JSONObject(message);
            message=JsonMessage.getString("value");
-           //Log.i("JSON ARRAY 2 ",message);
+           Log.i("JSON ARRAY 2 ",message);
        return message;}
         } catch (JSONException e) {
             e.printStackTrace();
             return "-1";
         }
     }
+    //You can use this method only if you has used  SetJSONtoGetAttributes
+    public Device getDeviceFromStringJson(String answer){
+        String message="\n";
+        JSONObject reader;
+        JSONObject contextElement;
+        JSONObject JsonMessage;
+        JSONObject JsoncontextResponses;
+        JSONArray contextResponses;
+        JSONArray attributes;
+        Device device=new Device();
+        try {
+            reader= new JSONObject(answer);
+            if(reader.has("errorCode")){
+                Log.i("Received Server Error",answer);
+                device.set_id(-1);
+                return device;
+            }else{
+                contextResponses=reader.getJSONArray("contextResponses");
+                message=contextResponses.getString(0);
+                //Log.i("JSON ARRAY 0 ",message);
+                JsoncontextResponses= new JSONObject(message);
+                contextElement=JsoncontextResponses.getJSONObject("contextElement");
+                attributes=contextElement.getJSONArray("attributes");
+                message=attributes.getString(0);
+                Log.i("JSON ARRAY 1 ",message);
+                JsonMessage= new JSONObject(message);
 
+                message=JsonMessage.getString("value");
+                Log.i("JSON ARRAY 2 ",message);
+                return device;
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+            device.set_id(-1);
+            return device;
+        }
+    }
 }

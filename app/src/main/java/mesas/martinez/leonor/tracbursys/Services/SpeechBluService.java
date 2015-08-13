@@ -9,6 +9,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.os.Handler;
 import android.os.Messenger;
 import android.preference.PreferenceManager;
@@ -17,6 +21,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.widget.Toast;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -42,7 +47,12 @@ private OrionJsonManager jsonManager;
 //--to-speak-Variables/Contans,enums---//
 private String toSpeak;
 private TextToSpeech tts=null;
-    
+ //-------------for accelerometer----------//
+ private Accelerometer a;
+ private int min_timesensitivity = 100000000;
+ private int time_sensitivity;
+ private float min_movement;
+ private ArrayList<BluetoothDevice> mDevicesArray;
 //----Bluetooth-Variables/Contans,enums--//    
 public static enum State {
     UNKNOWN,
@@ -80,6 +90,7 @@ public static enum State {
     //-----------------------------------------------Main-Method---------------------------//
     @Override
     protected void onHandleIntent(Intent intent) {
+        mDevicesArray= new ArrayList<BluetoothDevice>();
         sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
         LocalBroadcastManager.getInstance(this).registerReceiver(mReceiver, new IntentFilter(Constants.DEVICE_MESSAGE));
         LocalBroadcastManager.getInstance(this).registerReceiver(mReceiver, new IntentFilter(Constants.SERVICE_STOP));
@@ -134,11 +145,17 @@ public static enum State {
             start = false;
             mBluetoothAdapter.stopLeScan(SpeechBluService.this);
             this.setState(State.DISCONNECTING);
-            // Do Not forget to Stop the TTS Engine when you do not require it
+            // Stop the TTS Engine when you do not require it
             if (tts != null) {
                 tts.stop();
                 tts.shutdown();
                 tts=null;
+            }
+            //Stop accelerometer
+            try {
+                a.clone();
+            } catch (CloneNotSupportedException e) {
+                Log.d(Constants.TAG, "-----Cant close accelerometer Class--------");
             }
             LocalBroadcastManager.getInstance(this).unregisterReceiver(mReceiver);
             this.stopSelf();//Stop service
@@ -242,83 +259,252 @@ public static enum State {
 //Method from LeScanCallBack
     @Override
     public void onLeScan(final BluetoothDevice device, int rssi, byte[] scanRecord) {
+
         address = device.getAddress().toString();
         int auxint=rssi;
         string_rssi = String.valueOf(auxint);
-        // Log.v("---DEVICE FAUND---", address + ", rss1=" + string_rssi);
-
-
-//        deviceDAO = new DeviceDAO(getApplicationContext());
-//        deviceDAO.open();
-//        //try {
 
         jsonManager=new OrionJsonManager() ;
-        //Log.d("-OnLeScan:-----","After new OrionJsonManager");
-        String jsonString=jsonManager.SetJSONtoGetMessage("BLE", address);
-       // Log.d("-OnLeScan:-----","After SetJsonManager");
-        old_address = sharedPrefs.getString(Constants.DEVICE_ADDRESS, "0");
+        //String jsonString=jsonManager.SetJSONtoGetMessage("BLE", address);
+        String jsonString=jsonManager.SetJSONtoGetAttributes("BLE", address);
+        Log.d("-OnLeScan:-----","After SetJsonManager "+jsonString);
+       // old_address = sharedPrefs.getString(Constants.DEVICE_ADDRESS, "0");
        // Log.d("-OnLeScan:-----","Compare"+old_address+"=="+address+"-->"+(old_address.equals(address)));
             //If It detected a new device
-            if (!old_address.equals(address)) {
-                Log.d("-OnLeScan:-----","If");
-                //deviceaux = deviceDAO.getDeviceByAddress(device.getAddress().toString());
-                //Obtain text to server
-
-                //String query="/ngsi10/updateContext";
-
+//        if(!mDevicesArray.contains(device)){
+//            mDevicesArray.add(device);
+            //if (!old_address.equals(address)) {
+                Log.d("OnLeScan","----New Device---");
                 new HTTP_JSON_POST(this, jsonManager,address).execute();
-               // Log.d("--OnLeScan:----HTTP_JSON_POST.execute----:", toSpeak);
-//                //The message will be receiver in the BroadcastReceiver.
-//                //toSpeak = deviceaux.getDeviceSpecification();
-//
-//                //Update database
-//                //if The server not respond, tray to obtain tex to database
-//                //toSpeak = deviceaux.getDeviceSpecification();
-//
-//                //speakTheText(toSpeak);
-//                //set the value of the last device detected
-//                PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
-//                        .edit()
-//                        .putString(Constants.DEVICE_ADDRESS, address)
-//                        .commit();
-//                PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
-//                        .edit()
-//                        .putString(Constants.DEVICE_RSSI, string_rssi)
-//                        .commit();
-//
-//                //If It detected the same device again
-            } else {
-                Log.d("-OnLeScan:-----","Else");
 
-                old_string_rssi = sharedPrefs.getString(Constants.DEVICE_RSSI, "0");
-                Integer auxold = Integer.decode(old_string_rssi);
-                Integer aux = Integer.decode(string_rssi);
-                Integer rest = auxold - aux;
-//                //int primitiverest = rest.intValue();
-                //Log.d("-OnLeScan:------"+auxold+"-"+aux+"--->: "," "+rest);
-                if (rest > 10 || rest < -10) {
-////                    Log.d(TAG, "------device Detecte AGAIN---to Speak---:" + toSpeak);
-////
-////                    deviceaux = deviceDAO.getDeviceByAddress(device.getAddress().toString());
-////                    toSpeak = deviceaux.getDeviceSpecification();
-                   // speakTheText(toSpeak);
-                    new HTTP_JSON_POST(this, jsonManager,address).execute();
-                    PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
-                            .edit()
-                            .putString(Constants.DEVICE_ADDRESS, address)
-                            .commit();
-                    PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
-                            .edit()
-                            .putString(Constants.DEVICE_RSSI, string_rssi)
-                            .commit();
+//            } else {
+//                Log.d("OnLeScan","----Detected device again----");
+//
+//                old_string_rssi = sharedPrefs.getString(Constants.DEVICE_RSSI, "0");
+//                Integer auxold = Integer.decode(old_string_rssi);
+//                Integer aux = Integer.decode(string_rssi);
+//                Integer rest = auxold - aux;
+////                //int primitiverest = rest.intValue();
+//                //Log.d("-OnLeScan:------"+auxold+"-"+aux+"--->: "," "+rest);
+//                if (rest > 10 || rest < -10) {
+//////                    Log.d(TAG, "------device Detecte AGAIN---to Speak---:" + toSpeak);
+//////
+//////                    deviceaux = deviceDAO.getDeviceByAddress(device.getAddress().toString());
+//////                    toSpeak = deviceaux.getDeviceSpecification();
+//                   // speakTheText(toSpeak);
+//                    new HTTP_JSON_POST(this, jsonManager,address).execute();
+//                    PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
+//                            .edit()
+//                            .putString(Constants.DEVICE_ADDRESS, address)
+//                            .commit();
+//                    PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
+//                            .edit()
+//                            .putString(Constants.DEVICE_RSSI, string_rssi)
+//                            .commit();
+//                }
+//            }
+
+    }
+    //---------------To now the movement direction-------------//
+    class Accelerometer implements SensorEventListener {
+
+        private long last_update = 0, last_movement = 0;
+        private float prevX = 0, prevY = 0, prevZ = 0;
+        private float curX = 0, curY = 0, curZ = 0;
+        private float movement;
+        private int min_timesensitivity = 100000000;
+        private int time_sensitivity;
+        //float base_movement = 1E-6f;
+        private float min_movement=11;
+        private long time_difference=2;
+        private long current_time;
+
+        public int getTime_sensitivity() {
+            return time_sensitivity;
+        }
+
+        public void setTime_sensitivity(int time_sensitivity) {
+            this.time_sensitivity = time_sensitivity;
+        }
+
+        public float getMin_movement() {
+            return min_movement;
+        }
+
+        public void setMin_movement(float min_movement) {
+            this.min_movement = min_movement;
+        }
+
+        public long getTime_difference() {
+            return time_difference;
+        }
+
+        public long getCurrent_time() {
+            return current_time;
+        }
+
+        @Override
+        protected Object clone() throws CloneNotSupportedException {
+            SensorManager sm = (SensorManager) getSystemService(SENSOR_SERVICE);
+            sm.unregisterListener(this);
+            return super.clone();
+        }
+
+        Accelerometer() {
+            SensorManager sm = (SensorManager) getSystemService(SENSOR_SERVICE);
+            List<Sensor> sensors = sm.getSensorList(Sensor.TYPE_ACCELEROMETER);
+            if (sensors.size() > 0) {
+                sm.registerListener(this, sensors.get(0), SensorManager.SENSOR_DELAY_UI);
+            }
+        }
+
+        public boolean RangeOfTime() {
+            boolean response = false;
+            //*5.0 because discober devices is slow that accelerometer
+            if (time_difference < (time_sensitivity)) {
+                response = true;
+            }
+            Log.d(Constants.TAG, "-----RANGE OF TIMER------" + response + "--" + time_difference + " < " + (time_sensitivity));
+            return response;
+        }
+
+        @Override
+        public void onAccuracyChanged(Sensor sensor, int accuracy) {
+        }
+
+        @Override
+        public void onSensorChanged(SensorEvent event) {
+            synchronized (this) {
+                current_time = event.timestamp;
+                curX = event.values[0];
+                curY = event.values[1];
+                curZ = event.values[2];
+//initialization of variables
+                if (prevX == 0 && prevY == 0 && prevZ == 0) {
+                    last_update = current_time;
+                    last_movement = current_time;
+                    prevX = curX;
+                    prevY = curY;
+                    prevZ = curZ;
+                }
+                time_difference = current_time - last_movement;
+
+//           Log.v(Constants.TAG, " --Time--"+current_time+"---------DIFFER TIME----------"+time_difference);
+                if (time_difference > time_sensitivity) {
+                    movement = (Math.abs(curX - prevX) + Math.abs(curY - prevY) + Math.abs(curZ - prevZ));
+                    // Log.v(Constants.TAG, "\n\n-----Movement0------"+movement+" > "+min_movement+" --Time--"+current_time+"---------DIFFER TIME----------"+time_difference);
+                    if (movement > min_movement) {
+                        last_movement = current_time;
+                        Log.v(Constants.TAG, "\n\n-----Movement1------" + movement + " > " + min_movement + " --Time--" + current_time + "---------DIFFER TIME----------" + time_difference);
+                        prevX = curX;
+                        prevY = curY;
+                        prevZ = curZ;
+                    }
                 }
             }
-//
-//        //} //catch (Exception e) {
-//          //  Log.d("OnLeScan:", "------BAD ADREESS--------");
-//        //}
-//        deviceDAO.close();
-//        //}
+        }
+
     }
+
+    //---------------------Fin Accelerometer-------------------//
+    //---------------------Device Aux-------------------------//
+    private class Deviceaux {
+        private int state;
+        private int count;
+        private double outOfRegion;
+        private double dBmAverage;
+        private double lastdBmAverage;
+        private String address;
+        private String text;
+
+        Deviceaux(double dBmAverage, String address, String text) {
+            this.address = address;
+            this.text = text;
+            this.dBmAverage = dBmAverage;
+            this.lastdBmAverage = -77.0;
+            this.outOfRegion = -85.0;
+            this.state = 0;
+            this.count = 0;
+        }
+
+        Deviceaux(String address) {
+            this.address = address;
+            this.state = 0;
+            this.count = 0;
+            this.dBmAverage = -85.0;
+            this.lastdBmAverage = -77.0;
+            this.outOfRegion = -85.0;
+            this.text = "Danger";
+        }
+
+        Deviceaux(String address,String text) {
+            this.address = address;
+            this.state = 0;
+            this.count = 0;
+            this.dBmAverage = -85.0;
+            this.lastdBmAverage = -77.0;
+            this.outOfRegion = -85.0;
+            this.text = "Danger";
+        }
+        public int getState() {
+            return state;
+        }
+
+        public void setState(int state) {
+            this.state = state;
+        }
+
+        public int getCount() {
+            return count;
+        }
+
+        public void setCount(int count) {
+            this.count = count;
+        }
+
+        public String getAddress() {
+            return address;
+        }
+
+        public String getText() {
+            return text;
+        }
+
+        public void setText(String text) {
+            this.text = text;
+        }
+
+        public double getdBmAverage() {
+            return dBmAverage;
+        }
+
+        public void setdBmAverage(double dBmAverage) {
+            this.dBmAverage = dBmAverage;
+        }
+
+        public double getOutOfRegion() {
+            return outOfRegion;
+        }
+
+        public void setOutOfRegion(double outOfRegion) {
+            this.outOfRegion = outOfRegion;
+        }
+
+        public double getLastdBmAverage() {
+            return lastdBmAverage;
+        }
+
+        public void setLastdBmAverage(double lastdBmAverage) {
+            this.lastdBmAverage = lastdBmAverage;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            Deviceaux aux = (Deviceaux) o;
+            String address = aux.getAddress();
+            return this.address.equals(address);
+        }
+    }
+    //------------------------------Device aux--------------------//
 
 }
