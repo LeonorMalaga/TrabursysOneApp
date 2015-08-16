@@ -31,6 +31,8 @@ public static final String SPINNER_NAME="Leonor.martinez.mesas.installer.activit
 //---------------------------------Constans For UserMode---------------------------------------------//
 public static final String SERVICE_STATE="Leonor.martinez.mesas.user.activity.SERVICE_STATE";
 public static final String SERVICE_STOP="Leonor.martinez.mesas.user.activity.SERVICE_STOP";
+public static final String SERVICE_WAIT_RESPONSE="Leonor.martinez.mesas.user.activity.SERVICE_WAIT_RESPONSE";
+public static final String SERVICE_UNKNOWN_STATE="Leonor.martinez.mesas.user.activity.SERVICE_UNKNOWN_STATE";
 public static final String DEVICE_ADDRESS="Leonor.martinez.mesas.user.activity.DEVICE_ADDRESS";
 public static final String DEVICE_RSSI="Leonor.martinez.mesas.user.activity.DEVICE_RSSI";
 public static final String DEVICE_MESSAGE="Leonor.martinez.mesas.user.activity.DEVICE_RSSI";

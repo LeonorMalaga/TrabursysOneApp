@@ -20,7 +20,7 @@ public class Device implements Serializable {
 
     @Override
     public String toString() {
-        return "Name:" + mDeviceName + " address:" + mDeviceAddress + " latitude:" + latitude + " longitude:" + longitude;
+        return "Name:" + mDeviceName + ", address:" + mDeviceAddress + ", message "+this.mDeviceSpecification+", latitude:" + latitude + ", longitude:" + longitude + ",Proyect_id: "+ projecto_id;
     }
 
     /**

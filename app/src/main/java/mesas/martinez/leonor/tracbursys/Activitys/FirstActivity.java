@@ -11,6 +11,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 
 import mesas.martinez.leonor.tracbursys.R;
 import mesas.martinez.leonor.tracbursys.model.Constants;
@@ -35,41 +36,56 @@ public class FirstActivity extends ActionBarActivity {
         setContentView(R.layout.activity_first);
         startDefaultButton = (Button) this.findViewById(R.id.startDefault_button);
         //showUserSettings();
-        first = PreferenceManager.getDefaultSharedPreferences(FirstActivity.this).getInt(Constants.FIRST, 0);
-        Log.d("-FIRST-: ", String.valueOf(first));
-        if (first == 168451239) {
-            //Itś not the first time, look the work mode and jump to the correct activity
-            SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-            workMode = sharedPrefs.getString(Constants.WORKMODE, "1");
-            Log.d("-NOT FIRST-: ", workMode);
-            if (workMode.equals("0")) {
-                startActivity(new Intent(getApplicationContext(), User_Activity.class));
-            } else {
-                startActivity(new Intent(getApplicationContext(), Installer_Activity.class));
-            }
 
-        } else {
-            SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-            workMode = sharedPrefs.getString(Constants.WORKMODE, "1");
-            Log.d("--FIRST-WOORK MODE-: ", workMode);
-            DatabaseInstaler = new MySQLiteHelper(getApplicationContext());
-            PreferenceManager.getDefaultSharedPreferences(FirstActivity.this)
-                    .edit()
-                    .putInt(Constants.FIRST, 168451239)
-                    .commit();
-        }
 
-        startDefaultButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
+    }
+    @Override
+    protected void onResume( ) {
+        super.onResume();
+        try {
+            first = PreferenceManager.getDefaultSharedPreferences(FirstActivity.this).getInt(Constants.FIRST, 0);
+            Log.d("-FIRST-: ", String.valueOf(first));
+            if (first == 168451239) {
+                //Itś not the first time, look the work mode and jump to the correct activity
+                SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+                workMode = sharedPrefs.getString(Constants.WORKMODE, "1");
+                Log.d("-NOT FIRST-: ", workMode);
                 if (workMode.equals("0")) {
+
                     startActivity(new Intent(getApplicationContext(), User_Activity.class));
                 } else {
                     startActivity(new Intent(getApplicationContext(), Installer_Activity.class));
                 }
-            }
-        });
 
+            } else {
+                SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+                workMode = sharedPrefs.getString(Constants.WORKMODE, "1");
+                Log.d("--FIRST-WOORK MODE-: ", workMode);
+                DatabaseInstaler = new MySQLiteHelper(getApplicationContext());
+                PreferenceManager.getDefaultSharedPreferences(FirstActivity.this)
+                        .edit()
+                        .putInt(Constants.FIRST, 168451239)
+                        .commit();
+            }
+
+            startDefaultButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    if (workMode.equals("0")) {
+                        startActivity(new Intent(getApplicationContext(), User_Activity.class));
+                    } else {
+                        startActivity(new Intent(getApplicationContext(), Installer_Activity.class));
+                    }
+                }
+            });
+        }catch(Exception e){
+            Intent i = new Intent();
+            i.setClass(getApplicationContext(),FirstActivity.class);
+            i.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            startActivity(i);
+            // Show toast to the user
+            Toast.makeText(getApplicationContext(), "Data lost due to excess use of other apps", Toast.LENGTH_LONG).show();
+        }
     }
 
     @Override

@@ -1,6 +1,7 @@
 package mesas.martinez.leonor.tracbursys.Activitys;
 
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -16,6 +17,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import mesas.martinez.leonor.tracbursys.R;
 import mesas.martinez.leonor.tracbursys.Services.SpeechBluService;
@@ -58,6 +60,7 @@ public class User_Activity extends ActionBarActivity  {
         if (workMode.equals("1")) {
             startActivity(new Intent(getApplicationContext(), Installer_Activity.class));
         } else {
+            LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter("BLUETOOTH_OFF"));
             Log.d("--------------WOORK MODE----------: ", "USER");
             user_first_text = (TextView) this.findViewById(R.id.user_first_textView);
             user_secon_text = (TextView) this.findViewById(R.id.user_second_textView);
@@ -65,7 +68,7 @@ public class User_Activity extends ActionBarActivity  {
             user_text=(TextView) this.findViewById(R.id.user_textView);
             stop_start = (Button) this.findViewById(R.id.user_button);
             stop_start.setVisibility(View.INVISIBLE);
-            LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter("BLUETOOTH_OFF"));
+
     }}
     @Override
     protected void onResume( ) {
@@ -140,6 +143,16 @@ public class User_Activity extends ActionBarActivity  {
     }
         //---------------My Methods---------------------//
         private void startService(){
+        //
+          //Is bluetooth on
+                final BluetoothManager BluetoothManager = (android.bluetooth.BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+                BluetoothAdapter mBluetoothAdapter = BluetoothManager.getAdapter();
+
+            if (mBluetoothAdapter== null || !mBluetoothAdapter.isEnabled()) {
+                Log.i("starScan","BLUETOOH is OFF");
+                Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+                startActivityForResult(enableBtIntent, ENABLE_BT);}
+        //
         serviceState = SpeechBluService.State.CONNECTING.name();
             PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
                 .edit()

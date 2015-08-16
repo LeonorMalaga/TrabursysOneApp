@@ -1,5 +1,6 @@
 package mesas.martinez.leonor.tracbursys.model;
 
+import android.content.Context;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -7,6 +8,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 
 import mesas.martinez.leonor.tracbursys.comunication.HTTP_JSON_POST;
@@ -25,6 +27,8 @@ public class OrionJsonManager {
     private String installerDNIorNIF;
     private String date;
     private String deviceName;
+    private int project_id;
+    private Context context;
     public HTTP_JSON_POST.Gender JsonGender;
    // private JSONObject json;
    private String json;
@@ -40,6 +44,7 @@ public class OrionJsonManager {
         installerDNIorNIF="Anonymous";
         date="00000000";
         deviceName="Anonymous";
+        project_id=-1;
     }
   //Constructor to query message from id
     public String SetJSONtoGetMessage(String type, String id){
@@ -62,10 +67,11 @@ public class OrionJsonManager {
     };
 
     //Constructor to query message from id
-    public String SetJSONtoGetAttributes(String type, String id){
+    public String SetJSONtoGetAttributes(String type, String id,Context context){
         this.type = type;
         this.id = id;
         this.JsonGender=HTTP_JSON_POST.Gender.GET;
+        this.context=context;
         json="{  \n" +
                 "\"entities\": [\n" +
                 "  {\n" +
@@ -125,8 +131,8 @@ public class OrionJsonManager {
                     "      \"value\": \""+coverageAlert+"\"\n" +
                     "    },\n" +
                     "    {\n" +
-                    "      \"name\": \""+shortDate+"\",\n" +
-                    "      \"type\": \"Date\",\n" +
+                    "      \"name\": \"LastUpdate\",\n" +
+                    "      \"type\": \"date\",\n" +
                     "      \"value\": \""+date+"\"\n" +
                     "    },\n" +
                     "    {\n" +
@@ -227,36 +233,100 @@ public class OrionJsonManager {
         String message="\n";
         JSONObject reader;
         JSONObject contextElement;
-        JSONObject JsonMessage;
         JSONObject JsoncontextResponses;
         JSONArray contextResponses;
         JSONArray attributes;
         Device device=new Device();
+        device.set_id(-1);
         try {
             reader= new JSONObject(answer);
             if(reader.has("errorCode")){
                 Log.i("Received Server Error",answer);
-                device.set_id(-1);
-                return device;
             }else{
                 contextResponses=reader.getJSONArray("contextResponses");
                 message=contextResponses.getString(0);
-                //Log.i("JSON ARRAY 0 ",message);
+                Log.i("OrionJsonManager_getDeviceFromStringJSON",message);
                 JsoncontextResponses= new JSONObject(message);
                 contextElement=JsoncontextResponses.getJSONObject("contextElement");
                 attributes=contextElement.getJSONArray("attributes");
-                message=attributes.getString(0);
-                Log.i("JSON ARRAY 1 ",message);
-                JsonMessage= new JSONObject(message);
-
-                message=JsonMessage.getString("value");
-                Log.i("JSON ARRAY 2 ",message);
-                return device;
+                device=getDeviceFromJsonArray(attributes);
             }
         } catch (JSONException e) {
             e.printStackTrace();
-            device.set_id(-1);
+        }finally {
             return device;
         }
+    }
+    public Device getDeviceFromJsonArray(JSONArray array) throws JSONException {
+        Log.i("OrionJsonManager_getDeviceFromStringArray","--");
+        int length= array.length();
+        for(int i=0; i<length; i++){
+            //Log.i("OrionJsonManager_getDeviceFromStringArray",length+" i"+i);
+            message=array.getString(i);
+            //Log.i("OrionJsonManager_getDeviceFromStringArray",length+" message"+message);
+            String[] r=message.split(",");
+            String[] aux;
+            String aux2;
+            String ms=r[1];
+           // Log.i("OrionJsonManager_getDeviceFromStringArray",length+" switch"+ms);
+            switch (ms){
+                case "\"type\":\"text\"":
+                    switch(r[0]){
+                        case "{\"value\":\"InstallerDNIorNIF\"":
+                            aux=r[2].split(":");
+                            aux2=aux[1].substring(0,aux[1].length()-1);
+                            this.installerDNIorNIF=aux2;
+                            Log.i("---[ "+i+" , type: InstallerDNIorNIF]----",this.installerDNIorNIF);
+                            break;
+                        case "{\"value\":\"ProjectName\"":
+                            aux=r[2].split(":");
+                            aux2=aux[1].substring(0,aux[1].length()-1);
+                            this.projectName=aux2;
+                            Log.i("---[ "+i+" , type: ProjectName]----",aux2);
+                            ProjectDAO projectDAO=new ProjectDAO(context);
+                            projectDAO.open();
+                            Project projectaux=projectDAO.getProjectByName("Default");
+                            projectDAO.close();
+                            this.project_id=projectaux.get_id();
+
+                            break;
+                        default:
+                            this.message=" ";
+                            //Log.i("---[r2]----",r[2]);
+                            if(r[2].equals("\"name\":\"message\"}")){
+                            //message
+                            aux=r[0].split(":");
+                            this.message=aux[1];
+                            Log.i("---[ "+i+" , type: message]----",this.message);
+                            }
+                            break;
+                    }
+
+                    break;
+                case "\"type\":\"date\"":
+                    aux=r[0].split(":");
+                    this.date=aux[1];
+                    Log.i("---[ "+i+" , type: date]----",aux[1]);
+                    break;
+                case "\"type\":\"dBm\"":
+                    aux=r[0].split(":");
+                    this.coverageAlert=aux[1];
+                    Log.i("---[ "+i+" , type: dBm]----",aux[1]);
+                    break;
+                default:
+                    //coor case
+                    aux=r[0].split(":");
+                    this.latitude=aux[1];
+                    this.longitude=r[1];
+                    Log.i("---[ "+i+" , type: coor]----",this.latitude+","+this.longitude);
+                    break;
+            }
+//            for(int j=0; j<r.length; j++){
+//                Log.i("---[ "+i+" , "+j+" ]----",r[j]);
+//            }
+        }
+        Device device=new Device(this.project_id, this.id, this.latitude, this.longitude,this.deviceName, this.message, this.coverageAlert);
+        Log.i("OrionJsonManager:-Device- ",device.toString());
+        return device;
     }
 }

@@ -7,15 +7,20 @@ package mesas.martinez.leonor.tracbursys.model;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.CursorIndexOutOfBoundsException;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import mesas.martinez.leonor.tracbursys.R;
+
 public class ProjectDAO {
     // Database fields
     private SQLiteDatabase database;
+    private Context context;
 
     private MySQLiteHelper dbHelper;
     private String[] allColumns = {
@@ -26,7 +31,7 @@ public class ProjectDAO {
     };
     private android.util.Log Lod;
 
-    private Project cursorTo(Cursor cursor) {
+    private Project cursorTo(Cursor cursor) throws CursorIndexOutOfBoundsException {
         Project project = new Project();
         project.set_id(cursor.getInt(0));
         project.setDate(cursor.getString(1));
@@ -36,6 +41,7 @@ public class ProjectDAO {
     }
     
     public ProjectDAO(Context context) {
+        this.context=context;
         dbHelper = new MySQLiteHelper(context);
     }
 
@@ -86,13 +92,18 @@ public class ProjectDAO {
 
     public Project getProjectByName(String name) {
         Project project = new Project();
-        Cursor cursor = database.query(MySQLiteHelper.TABLE_PROJECTS,
-                allColumns, MySQLiteHelper.COLUMN_PROJECT_NAME+ " = " + "\'" + name + "\'", null, null, null, null);
-        if (cursor != null) {
-            cursor.moveToFirst();
-            project = cursorTo(cursor);
+        try {
+            Cursor cursor = database.query(MySQLiteHelper.TABLE_PROJECTS,
+                    allColumns, MySQLiteHelper.COLUMN_PROJECT_NAME + " = " + "\'" + name + "\'", null, null, null, null);
+            if (cursor != null) {
+                cursor.moveToFirst();
+                project = cursorTo(cursor);
+
+            }
+            cursor.close();
+        }catch(CursorIndexOutOfBoundsException e){
+            project.set_id(-1);
         }
-        cursor.close();
         return project;
     }
     public Project getProjectByDate(String date) {

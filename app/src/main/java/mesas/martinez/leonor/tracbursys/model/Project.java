@@ -8,7 +8,7 @@ import java.io.Serializable;
  * identificate by the bluettoth adress(with ejem:<Adress>:AE1234CD,<device_name>:"LUIS", <RSSI>:"-51dBm")
  */
 public class Project implements Serializable {
-    private int _id;
+    private int _id=-1;
     private String mdate = null;//The date at which the class is generate
     private String mprojectName = null;//"LUIS"
     private String mprojectSpecification = null;//message to show

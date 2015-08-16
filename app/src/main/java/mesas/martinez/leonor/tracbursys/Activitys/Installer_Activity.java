@@ -194,13 +194,17 @@ public class Installer_Activity extends ActionBarActivity implements AdapterView
                     projectDAO.open();
                     project_name = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString(Constants.SPINNER_NAME, "Anonymous27");
                     projectaux = projectDAO.getProjectByName(project_name);
+                    project_id=projectaux.get_id();
                     projectDAO.close();
                     //Now We want to Now if the device is already registered in the database
                     deviceDAO = new DeviceDAO(getApplicationContext());
                     deviceDAO.open();
                     deviceaux = deviceDAO.getDeviceByAddressAndProject(address, projectaux.get_id());
                     deviceDAO.close();
-                    if (deviceaux.get_id() != -1) {
+                    if((project_id==-1)){
+                        String cproject=getResources().getString(R.string.new_project_text);
+                        data_validation.setText(cproject);
+                    }else if ((deviceaux.get_id() != -1)) {
                         data_validation.setText("This device can not be save.The device address already exist in the specified Project");
                     } else {
                         OrionJsonManager jsonManager=new OrionJsonManager();
@@ -261,8 +265,9 @@ public class Installer_Activity extends ActionBarActivity implements AdapterView
     private void setScanState(boolean value) {
         mScanning = value;
         ((Button) this.findViewById(R.id.find_ibeacon_button)).setText(value ? "Stop": "Scan");
-        if(deviceFaund == 1){
-        ((TextView) this.findViewById(R.id.intaller_response_textView)).setText("No device detected");}
+      if(deviceFaund == 1){
+          String swo=this.getString(R.string.no_new_device);
+        ((TextView) this.findViewById(R.id.intaller_response_textView)).setText(swo);}
     }
 
     //Set Scan botton

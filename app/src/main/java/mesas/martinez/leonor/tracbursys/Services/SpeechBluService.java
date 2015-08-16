@@ -57,13 +57,14 @@ private TextToSpeech tts=null;
 public static enum State {
     UNKNOWN,
     WAIT,
+    WAIT_RESPONSE,
     SCANNING,
     BLUETOOTH_OFF,
     CONNECTING,
     DISCONNECTING
 }
 
-    private static final long SCAN_TIMEOUT = 5000;
+    private static final long SCAN_TIMEOUT = 2000;
     private static final long WAIT_PERIOD = 5000;
     private final List<Messenger> mClients = new LinkedList<Messenger>();
     private final Map<String, BluetoothDevice> mDevices = new HashMap<String, BluetoothDevice>();
@@ -84,46 +85,62 @@ public static enum State {
         super(SpeechBluService.class.getName());
        // this.setState(State.UNKNOWN);
         mHandler = new Handler();
+        mState=State.CONNECTING;
         start = true;
+        tts=null;
     }
 
     //-----------------------------------------------Main-Method---------------------------//
     @Override
     protected void onHandleIntent(Intent intent) {
+        //to can reproduce the messages
+        toSpeak = " ";
+        if(tts==null){
+            Log.i("Create TexToSpeech", "new tts");
+            tts = new TextToSpeech(this, this);
+            tts.setSpeechRate(0.5f);}
+
         mDevicesArray= new ArrayList<BluetoothDevice>();
         sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
         LocalBroadcastManager.getInstance(this).registerReceiver(mReceiver, new IntentFilter(Constants.DEVICE_MESSAGE));
         LocalBroadcastManager.getInstance(this).registerReceiver(mReceiver, new IntentFilter(Constants.SERVICE_STOP));
-//to can reproduce the messages
-        toSpeak = " ";
-        //if(tts==null){
-        tts = new TextToSpeech(this, this);
-        tts.setSpeechRate(0.5f);//}
-        
+        LocalBroadcastManager.getInstance(this).registerReceiver(mReceiver, new IntentFilter(Constants.SERVICE_UNKNOWN_STATE));
+        LocalBroadcastManager.getInstance(this).registerReceiver(mReceiver, new IntentFilter(Constants.SERVICE_WAIT_RESPONSE));
+        try {
+        this.startScan();
+        } catch (InterruptedException e) {
+            Log.d("InterrupteException in While", "------------STOP----------");
+            //start = false;
+        }
+
  //Start detect i-beacons
         while (start) {
-            try {
-                synchronized (this) {
-                    int count=0;
-                    Log.d("onHandleIntent WHILE", "Start Scan");
-                    this.startScan();
-                    if(mState.equals(State.BLUETOOTH_OFF)){
-                        if(count==5){
-                            String stopping=getResources().getString(R.string.stopping);
-                            Toast.makeText(this, stopping, Toast.LENGTH_LONG).show();
-                            this.wait(Constants.WAIT_TIME);
-                            mstop();
-                        }else{
-                        this.wait(WAIT_PERIOD*10);}
-                    }else{
-                        count=0;
-                    this.wait(WAIT_PERIOD);}
-                }
-            } catch (InterruptedException e) {
-                Log.d("InterrupteException in While", "------------STOP----------");
-                start = false;
-            }
-        }
+//            synchronized (this) {
+//                try {
+//            this.wait(WAIT_PERIOD*10);
+//                } catch (InterruptedException e) {
+//                    Log.d("InterrupteException in While", "------------STOP----------");
+//                    //start = false;
+//                }
+  //          }
+
+//            Log.i("---onHandleIntent WHILE--", "");
+//            try {
+//                synchronized (this) {
+//                    if(mState.equals(State.SCANNING) || (mState.equals(State.WAIT_RESPONSE))){
+//                        Log.i("---onHandleIntent WHILE--", "WAIT FOR STATE CHANGE");
+//                        this.wait(WAIT_PERIOD);
+//                    }else{
+//                    int count=0;
+//                    Log.d("---onHandleIntent WHILE---", "Start Scan");
+//                            //this.startScan();
+//                    this.wait(WAIT_PERIOD);//}
+//                }}
+//            } catch (InterruptedException e) {
+//                Log.d("InterrupteException in While", "------------STOP----------");
+//                start = false;
+//            }
+       }
         
     }
     //---------------------------------------Methods and subclass--------------------------------//
@@ -152,11 +169,7 @@ public static enum State {
                 tts=null;
             }
             //Stop accelerometer
-            try {
-                a.clone();
-            } catch (CloneNotSupportedException e) {
-                Log.d(Constants.TAG, "-----Cant close accelerometer Class--------");
-            }
+
             LocalBroadcastManager.getInstance(this).unregisterReceiver(mReceiver);
             this.stopSelf();//Stop service
             this.onDestroy();
@@ -169,18 +182,27 @@ public static enum State {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action=intent.getAction();
-            Log.i("-----------INTENT received-------------", action);
             switch(action) {
                 case Constants.DEVICE_MESSAGE:
                     toSpeak = intent.getStringExtra("message");
-                    speakTheText(toSpeak);
+                    Log.i("-----------INTENT received-------------","---DEVICE_MESSAGE--"+toSpeak);
+                    if(!toSpeak.equals(null))
+                        SpeechBluService.this.speakTheText( );
                     break;
                 case Constants.SERVICE_STOP:
                     SpeechBluService.this.mstop();
-                    Log.e("-----------INTENT received-------------","---STOP SERVICE--");                    
+                    Log.i("-----------INTENT received-------------","---STOP SERVICE--");
+                    break;
+                case Constants.SERVICE_WAIT_RESPONSE:
+                    SpeechBluService.this.setState(State.WAIT_RESPONSE);
+                    Log.i("-----------INTENT received-------------","--SERVICE_WAIT_RESPONSE--");
+                    break;
+                case Constants.SERVICE_UNKNOWN_STATE:
+                    SpeechBluService.this.setState(State.UNKNOWN);
+                    Log.i("-----------INTENT received-------------","---SERVICE_UNKNOWN_STATE--");
                     break;
                 default:
-                    Log.e("-----------INTENT received-------------", action+"---not catched--");
+                    Log.i("-----------INTENT received-------------", action+"---not catched--");
                     break;
             }
         }
@@ -203,15 +225,15 @@ public static enum State {
 
     }
 
-    private void speakTheText(String textToSpeak) {
+    protected void speakTheText( ) {
         //Log.v("--SPEAKtheTEXT---", textToSpeak);
-        if(!textToSpeak.equals(" ")){
-        tts.speak(textToSpeak, TextToSpeech.QUEUE_FLUSH, null);}
+        //if(!textToSpeak.equals(" ") && tts!=null){
+        tts.speak(SpeechBluService.this.toSpeak, TextToSpeech.QUEUE_FLUSH, null);//}
     }
 
     @Override
     public void onDestroy() {
-        Log.d("--OnDetroy---", "NewSpeechBluService");
+        Log.d("--OnDetroy---", "SpeechBluService");
         this.mstop();
         super.onDestroy();
     }
@@ -236,13 +258,12 @@ public static enum State {
 
 
     private void startScan() throws InterruptedException {
-        mDevices.clear();
-
         if (mBluetoothAdapter== null) {
             final BluetoothManager BluetoothManager = (android.bluetooth.BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
             mBluetoothAdapter = BluetoothManager.getAdapter();
         }
         if (mBluetoothAdapter== null || !mBluetoothAdapter.isEnabled()) {
+            Log.i("starScan","BLUETOOH is OFF");
             this.setState(State.BLUETOOTH_OFF);
             String turn_on=getResources().getString(R.string.turn_on_Bluetooth);
             Toast.makeText(this, turn_on, Toast.LENGTH_LONG).show();
@@ -252,6 +273,7 @@ public static enum State {
             LocalBroadcastManager.getInstance(this).sendBroadcastSync(intent);
             start=false;
         } else {
+            mDevices.clear();
             SpeechBluService.this.start();
         }
     }
@@ -266,15 +288,15 @@ public static enum State {
 
         jsonManager=new OrionJsonManager() ;
         //String jsonString=jsonManager.SetJSONtoGetMessage("BLE", address);
-        String jsonString=jsonManager.SetJSONtoGetAttributes("BLE", address);
-        Log.d("-OnLeScan:-----","After SetJsonManager "+jsonString);
+        String jsonString=jsonManager.SetJSONtoGetAttributes("BLE", address,getApplicationContext());
+        //Log.d("-OnLeScan:-----","After SetJsonManager "+jsonString);
        // old_address = sharedPrefs.getString(Constants.DEVICE_ADDRESS, "0");
        // Log.d("-OnLeScan:-----","Compare"+old_address+"=="+address+"-->"+(old_address.equals(address)));
             //If It detected a new device
 //        if(!mDevicesArray.contains(device)){
 //            mDevicesArray.add(device);
             //if (!old_address.equals(address)) {
-                Log.d("OnLeScan","----New Device---");
+                Log.d("OnLeScan","----New Device--- address: "+ address+ " rssi "+string_rssi);
                 new HTTP_JSON_POST(this, jsonManager,address).execute();
 
 //            } else {

@@ -17,6 +17,12 @@
     <string name="error">Server not response:</string>
     <string name="Data_send">Press to send data</string>
     <string name="Data_get">Press to get device storage dates</string>
+    <string name="saved">Saved device =</string>
+    <string name="with_text">, with associate text= </string>
+    <string name="saved_localandremote">, in remote Server and local dataBase</string>
+    <string name="saved_error">ERROR:Saved device =</string>
+    <string name="saved_not_local">, in remote Server but it can save in local dataBase </string>
+    <string name="saved_conflict_in_the_project">, in remote Server but it can save in local dataBase because the device already exit in the project</string>
     <!-- activity_first_old -->
     <string name="first_text">It´s the first time you open this app. The storage structure should be build</string>
     <string name="button_Fill_Proyect">Fill Proyect data</string>
@@ -45,6 +51,7 @@
     <string name="default_project_specification">This is my first project </string>
     <!-- activity_installer -->
     <string name="select_project_textView">SELECT PROJECT:</string>
+    <string name="new_project_text">You should create a Project</string>
     <string name="new_project_button">New project</string>
     <string name="find_ibeacon_button">Find i-beacon</string>
     <string name="white_line"></string>
@@ -54,6 +61,7 @@
     <string name="device_specification_description">Write the text to show to the users</string>
     <string name="default_device_specification">Elevator</string>
     <string name="data_validation">Data Validation:</string>
+    <string name="no_new_device">No new device detected</string>
     <!-- activity-and-service-for-user -->
     <string name="user_first_textView">Press the button to start ,the service detection of I_beacons.</string>
     <string name="user_first_text">Press the button to stop ,the service detection of I_beacons.</string>

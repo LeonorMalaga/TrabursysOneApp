@@ -3,6 +3,8 @@ package mesas.martinez.leonor.tracbursys.comunication;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.CursorIndexOutOfBoundsException;
+import android.database.sqlite.SQLiteConstraintException;
 import android.os.AsyncTask;
 import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
@@ -14,6 +16,7 @@ import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.conn.HttpHostConnectException;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicHeader;
@@ -70,7 +73,7 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
     private URL url;
     private String body;
     private String stringUrl;
-    private String error;
+    private String error=" ";
     private Gender gender;
     private JSONObject json;
     TextView data_validation;
@@ -87,7 +90,9 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
 
     //--------------------------Constructor-------------------------------//
     public HTTP_JSON_POST(Context context, OrionJsonManager object, String address){
-
+        //stop Service and change the button text
+//        Intent intent = new Intent(Constants.SERVICE_WAIT_RESPONSE);
+//        LocalBroadcastManager.getInstance(context).sendBroadcastSync(intent);
         this.address=address;
         this.context=context;
         this.gender=object.JsonGender;
@@ -95,8 +100,7 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
         this.body=objectJsonManager.getStringJson();
         SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(context);
         this.stringUrl = sharedPrefs.getString(Constants.SERVER, "@string/default_import_editText");
-        //Http petition to create a new instance in Orion
-        //query="/ngsi10/updateContext";
+        //Http petition to get information from server
         stringUrl="http://"+stringUrl+gender.query;
       // Log.i("-----HTTP_JSON_POST url:----",stringUrl);
         try{
@@ -116,7 +120,7 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
         //Http petition to create a new instance in Orion
         //query="/ngsi10/updateContext";
         stringUrl="http://"+stringUrl+gender.query;
-        //Log.i("-----HTTP_JSON_POST url:----",stringUrl);
+        Log.i("-----HTTP_JSON_POST url:----",stringUrl);
         try{
             url=new URL(stringUrl);
         }catch(MalformedURLException e){
@@ -145,22 +149,25 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
             if(gender.index >0) {
                 this.onPostExecute(result);
             }
+        }catch(HttpHostConnectException e){
+            error=e.getMessage();
         }catch(URISyntaxException e){
             error=e.getMessage();
-            e.printStackTrace();
+
         } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
+
             error=e.getMessage();
         } catch (ClientProtocolException e) {
-            e.printStackTrace();
+
             error=e.getMessage();
         } catch (IOException e) {
-            e.printStackTrace();
+
             error=e.getMessage();
         }catch(Exception e){
-            e.printStackTrace();
+
             error=e.getMessage();
         }finally {
+  //          Log.e("doInBackground",error.toString());
            return result;
         }
     }
@@ -184,22 +191,38 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
                  message= objectJsonManager.getMessage();
                 String rssi = objectJsonManager.getCoverageAlert();
                 String project_name = objectJsonManager.getProjectName();
-                //Work with Database
-                projectDAO = new ProjectDAO(context);
-                projectDAO.open();
-                projectaux = projectDAO.getProjectByName(project_name);
-                projectDAO.close();
-                deviceaux = new Device(projectaux.get_id(), address, mlatitude, mlongitude, name, message, rssi);
-                deviceDAO = new DeviceDAO(context);
-                deviceDAO.open();
-                int device_id = deviceDAO.create(deviceaux);
-                deviceDAO.close();
+                String text1=" ";
+                String text2=" ";
+                String text3=" ";
+             try {
+                        //Work with Database
+                        projectDAO = new ProjectDAO(context);
+                        projectDAO.open();
+                        projectaux = projectDAO.getProjectByName(project_name);
+                        projectDAO.close();
+                        deviceaux = new Device(projectaux.get_id(), address, mlatitude, mlongitude, name, message, rssi);
+                        deviceDAO = new DeviceDAO(context);
+                        deviceDAO.open();
+                        int device_id = deviceDAO.create(deviceaux);
+                        deviceDAO.close();
+
                 deviceaux.set_id(device_id);
                 if (device_id == -1) {
-                    data_validation.setText("ERROR:Saved device =" + address + ", with associate text= " + message + "in remote Server but it can save in local dataBase ");
+                    text1=context.getString(R.string.saved_error);
+                    text2=context.getString(R.string.with_text);
+                    text3=context.getString(R.string.saved_not_local);
                 } else {
-                    data_validation.setText("Saved device =" + address + ", with associate text= " + message + "in remote Server and local dataBase");
-                }
+                    text1=context.getString(R.string.saved);
+                    text2=context.getString(R.string.with_text);
+                    text3=context.getString(R.string.saved_localandremote);
+                         }
+              }catch(SQLiteConstraintException e){
+                 text1=context.getString(R.string.saved_error);
+                 text2=context.getString(R.string.with_text);
+                 text3=context.getString(R.string.saved_conflict_in_the_project);
+              }finally{
+                  data_validation.setText(text1 + address + text2 + message + text3);
+               }
                     break;
                 case 1:
                     try {
@@ -237,22 +260,19 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
                         message=getFromDatabase(s);
                         //e.printStackTrace();
                     }finally {
-                        //Log.i("-----------SPECIFICATION-TEXT-------------",message);
-                        //Send to Service
-                        Intent intent = new Intent(Constants.DEVICE_MESSAGE);
-                        intent.putExtra("message", message);
-                        LocalBroadcastManager.getInstance(context).sendBroadcastSync(intent);
-                        Log.i("-----------INTENT Was SEND-------------",message);
+                        sendtoSpeechBluService();
                     }
                     break;
                 case 2:
+
                     try {
                         JSONObject json = new JSONObject(s);
+                        Log.i("case 2",s);
                         if(json.has("errorCode")){
                             //find text in database
                             message=getFromDatabase(s);
                         }else{
-                            Log.i("JSON",json.toString());
+                            //Log.i(" case 2 JSON",json.toString());
                             mdevice=objectJsonManager.getDeviceFromStringJson(json.toString());
                             project_id=mdevice.getprojecto_id();
                             if(existDevice(project_id)){
@@ -260,24 +280,19 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
                                 this.updateDevice(mdevice);
                             }else{
                                 this.updateProject(mdevice);
-
                             }
                             message=mdevice.getDeviceSpecification();
                         }
                     }catch(JSONException e){
-                        Log.i("-----------ERROR Convirtiendo a JSON-------------",s);
+                        Log.e("-----------ERROR Convirtiendo a JSON-------------",s);
                         message=getFromDatabase(s);
                         //e.printStackTrace();
                     }catch(Exception e) {
-                        Log.i("JSON:", json.toString() + "ERROR CODE Database ");
-
+                        Log.e("JSON exception case 2:", e.getMessage());
+                        e.printStackTrace();
+                        message="";
                     }finally {
-                        //Log.i("-----------SPECIFICATION-TEXT-------------",message);
-                        //Send to Service
-                        Intent intent = new Intent(Constants.DEVICE_MESSAGE);
-                        intent.putExtra("message", message);
-                        LocalBroadcastManager.getInstance(context).sendBroadcastSync(intent);
-                        Log.i("-----------INTENT Was SEND-------------",message);
+                         sendtoSpeechBluService();
                     }
                     break;
 
@@ -287,7 +302,11 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
             data_validation.setText("Remote Server error:"+error);}else{
                 Log.e("Remote Server error:",error);
             }
+//            Intent intent2 = new Intent(Constants.SERVICE_UNKNOWN_STATE);
+//            LocalBroadcastManager.getInstance(context).sendBroadcastSync(intent2);
         }
+
+
     }
 //-------------------Mi-Methods-------------------------------//
     private String inputStreamToString(InputStream is) throws IOException {
@@ -320,12 +339,15 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
     }
     //
     private int updateProject(Device mydevice){
+        Log.i("HTTP_JSON_POST","updateProject");
         int result=-1;
         int project_id=mydevice.getprojecto_id();
         //update text in database
         try {
             deviceDAO = new DeviceDAO(context);
             deviceDAO.open();
+            projectDAO=new ProjectDAO(context);
+            projectDAO.open();
             //is Device in my Database?
             if(project_id==-1){
                 deviceaux = deviceDAO.getDeviceByAddress(this.address);
@@ -342,8 +364,7 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
                 Log.i("JSON:","DEVICE UPDATE"+this.address+" "+message);
             } else {
                 //Be careful the project id  exits, int other case, create a new project
-                projectDAO=new ProjectDAO(context);
-                projectDAO.open();
+
                 projectaux= projectDAO.getProjectByID(project_id);
                 if(projectaux.get_id()==-1){
                     //Create new project
@@ -358,6 +379,8 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
                 result=deviceDAO.create(mydevice);
                 Log.i("JSON:","NEW DEVICE SAVE:"+this.address+" "+message+", in Project:"+projectaux.getmprojectName());
             }
+
+        }catch(CursorIndexOutOfBoundsException e){
 
         }finally {
             projectDAO.close();
@@ -402,6 +425,7 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
         return deviceaux.get_id();
     }
     private int updateDevice(Device device){
+        Log.i("HTTP_JSON_POST","updateDevice");
         int result=-1;
         deviceDAO = new DeviceDAO(context);
         deviceDAO.open();
@@ -410,6 +434,16 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
         deviceDAO.update(device);
         deviceDAO.close();
         return deviceaux.get_id();
+    }
+    private void sendtoSpeechBluService(){
+        Intent intent = new Intent(Constants.DEVICE_MESSAGE);
+        if(message==null){message=" ";}
+        intent.putExtra("message", message);
+        LocalBroadcastManager.getInstance(context).sendBroadcastSync(intent);
+       // Log.i("-----------INTENT Was SEND-------------",message);
+       // Intent intent2 = new Intent(Constants.SERVICE_UNKNOWN_STATE);
+       // LocalBroadcastManager.getInstance(context).sendBroadcastSync(intent2);
+
     }
 
 }
