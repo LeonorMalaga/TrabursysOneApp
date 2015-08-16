@@ -196,7 +196,12 @@ public class OrionJsonManager {
     public String getDeviceName() {
         return deviceName;
     }
-//You can use this method only if you has used  SetJSONtoGetMessage
+
+    public void setDeviceName(String deviceName) {
+        this.deviceName = deviceName;
+    }
+
+    //You can use this method only if you has used  SetJSONtoGetMessage
     public String getMessageFromStringJson(String answer){
         String message="\n";
         JSONObject reader;
@@ -252,7 +257,8 @@ public class OrionJsonManager {
                 device=getDeviceFromJsonArray(attributes);
             }
         } catch (JSONException e) {
-            e.printStackTrace();
+            Log.i("Can¨t combert response to JSOM, response:",answer);
+            //e.printStackTrace();
         }finally {
             return device;
         }
@@ -260,11 +266,12 @@ public class OrionJsonManager {
     public Device getDeviceFromJsonArray(JSONArray array) throws JSONException {
         Log.i("OrionJsonManager_getDeviceFromStringArray","--");
         int length= array.length();
+        this.message=" ";
         for(int i=0; i<length; i++){
             //Log.i("OrionJsonManager_getDeviceFromStringArray",length+" i"+i);
-            message=array.getString(i);
+            String m=array.getString(i);
             //Log.i("OrionJsonManager_getDeviceFromStringArray",length+" message"+message);
-            String[] r=message.split(",");
+            String[] r=m.split(",");
             String[] aux;
             String aux2;
             String ms=r[1];
@@ -291,8 +298,8 @@ public class OrionJsonManager {
 
                             break;
                         default:
-                            this.message=" ";
-                            //Log.i("---[r2]----",r[2]);
+
+                            Log.i("---[r2]----",r[2]);
                             if(r[2].equals("\"name\":\"message\"}")){
                             //message
                             aux=r[0].split(":");
@@ -306,19 +313,19 @@ public class OrionJsonManager {
                 case "\"type\":\"date\"":
                     aux=r[0].split(":");
                     this.date=aux[1];
-                    Log.i("---[ "+i+" , type: date]----",aux[1]);
+                    //Log.i("---[ "+i+" , type: date]----",aux[1]);
                     break;
                 case "\"type\":\"dBm\"":
                     aux=r[0].split(":");
                     this.coverageAlert=aux[1];
-                    Log.i("---[ "+i+" , type: dBm]----",aux[1]);
+                    //Log.i("---[ "+i+" , type: dBm]----",aux[1]);
                     break;
                 default:
                     //coor case
                     aux=r[0].split(":");
                     this.latitude=aux[1];
                     this.longitude=r[1];
-                    Log.i("---[ "+i+" , type: coor]----",this.latitude+","+this.longitude);
+                    //Log.i("---[ "+i+" , type: coor]----",this.latitude+","+this.longitude);
                     break;
             }
 //            for(int j=0; j<r.length; j++){
@@ -326,7 +333,7 @@ public class OrionJsonManager {
 //            }
         }
         Device device=new Device(this.project_id, this.id, this.latitude, this.longitude,this.deviceName, this.message, this.coverageAlert);
-        Log.i("OrionJsonManager:-Device- ",device.toString());
+        Log.i("OrionJsonManager:--DEVICE--/\n ",device.toString());
         return device;
     }
 }

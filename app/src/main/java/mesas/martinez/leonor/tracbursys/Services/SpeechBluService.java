@@ -70,6 +70,7 @@ public static enum State {
     private final Map<String, BluetoothDevice> mDevices = new HashMap<String, BluetoothDevice>();
 
     private String address;
+    private String device_name;
     private String string_rssi;
     private String old_address;
     private String old_string_rssi;
@@ -95,10 +96,11 @@ public static enum State {
     protected void onHandleIntent(Intent intent) {
         //to can reproduce the messages
         toSpeak = " ";
-        if(tts==null){
+        //if(tts==null){
             Log.i("Create TexToSpeech", "new tts");
-            tts = new TextToSpeech(this, this);
-            tts.setSpeechRate(0.5f);}
+            tts = new TextToSpeech(getBaseContext(),this);
+            tts.setSpeechRate(0.5f);
+    //}
 
         mDevicesArray= new ArrayList<BluetoothDevice>();
         sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
@@ -115,31 +117,15 @@ public static enum State {
 
  //Start detect i-beacons
         while (start) {
-//            synchronized (this) {
-//                try {
-//            this.wait(WAIT_PERIOD*10);
-//                } catch (InterruptedException e) {
-//                    Log.d("InterrupteException in While", "------------STOP----------");
-//                    //start = false;
-//                }
-  //          }
-
-//            Log.i("---onHandleIntent WHILE--", "");
-//            try {
-//                synchronized (this) {
-//                    if(mState.equals(State.SCANNING) || (mState.equals(State.WAIT_RESPONSE))){
-//                        Log.i("---onHandleIntent WHILE--", "WAIT FOR STATE CHANGE");
-//                        this.wait(WAIT_PERIOD);
-//                    }else{
-//                    int count=0;
-//                    Log.d("---onHandleIntent WHILE---", "Start Scan");
-//                            //this.startScan();
-//                    this.wait(WAIT_PERIOD);//}
-//                }}
-//            } catch (InterruptedException e) {
-//                Log.d("InterrupteException in While", "------------STOP----------");
-//                start = false;
-//            }
+            try {
+                synchronized (this) {
+                    Log.d("---onHandleIntent WHILE---", "Start Scan");
+                    this.startScan();
+                    this.wait(WAIT_PERIOD*2);}
+            } catch (InterruptedException e) {
+                Log.d("InterruptedException in While", "------------STOP----------");
+                start = false;
+            }
        }
         
     }
@@ -247,12 +233,16 @@ public static enum State {
             mHandler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    SpeechBluService.this.setState(State.WAIT);
+                    //SpeechBluService.this.setState(State.WAIT);
                     mBluetoothAdapter.stopLeScan(SpeechBluService.this);
                 }
             }, SCAN_TIMEOUT);
+        //Wait for HTTP_JSON_POST end, before scan again
+        if((!mState.equals(State.SCANNING)) && (!mState.equals(State.WAIT_RESPONSE)) ){
+//                        Log.i("---onHandleIntent WHILE--", "WAIT FOR STATE CHANGE");
             SpeechBluService.this.setState(State.SCANNING);
             mBluetoothAdapter.startLeScan(SpeechBluService.this);
+        }
 
      }
 
@@ -285,10 +275,11 @@ public static enum State {
         address = device.getAddress().toString();
         int auxint=rssi;
         string_rssi = String.valueOf(auxint);
-
+        device_name=device.getName();
         jsonManager=new OrionJsonManager() ;
         //String jsonString=jsonManager.SetJSONtoGetMessage("BLE", address);
         String jsonString=jsonManager.SetJSONtoGetAttributes("BLE", address,getApplicationContext());
+        jsonManager.setDeviceName(device_name);
         //Log.d("-OnLeScan:-----","After SetJsonManager "+jsonString);
        // old_address = sharedPrefs.getString(Constants.DEVICE_ADDRESS, "0");
        // Log.d("-OnLeScan:-----","Compare"+old_address+"=="+address+"-->"+(old_address.equals(address)));

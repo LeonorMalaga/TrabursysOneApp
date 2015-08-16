@@ -15,6 +15,7 @@
     <string name="send_button">SEND:</string>
     <string name="get_button">GET:</string>
     <string name="error">Server not response:</string>
+    <string name="error_Server">Remote server error:</string>
     <string name="Data_send">Press to send data</string>
     <string name="Data_get">Press to get device storage dates</string>
     <string name="saved">Saved device =</string>

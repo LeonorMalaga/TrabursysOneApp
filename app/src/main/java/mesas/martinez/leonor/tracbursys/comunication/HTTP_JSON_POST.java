@@ -90,9 +90,9 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
 
     //--------------------------Constructor-------------------------------//
     public HTTP_JSON_POST(Context context, OrionJsonManager object, String address){
-        //stop Service and change the button text
-//        Intent intent = new Intent(Constants.SERVICE_WAIT_RESPONSE);
-//        LocalBroadcastManager.getInstance(context).sendBroadcastSync(intent);
+       // stop Service and change the button text
+        Intent intent = new Intent(Constants.SERVICE_WAIT_RESPONSE);
+        LocalBroadcastManager.getInstance(context).sendBroadcastSync(intent);
         this.address=address;
         this.context=context;
         this.gender=object.JsonGender;
@@ -260,14 +260,14 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
                         message=getFromDatabase(s);
                         //e.printStackTrace();
                     }finally {
-                        sendtoSpeechBluService();
+                        sendtoSpeechBluService(message);
                     }
                     break;
                 case 2:
 
                     try {
                         JSONObject json = new JSONObject(s);
-                        Log.i("case 2",s);
+                        //Log.i("case 2",s);
                         if(json.has("errorCode")){
                             //find text in database
                             message=getFromDatabase(s);
@@ -292,15 +292,16 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
                         e.printStackTrace();
                         message="";
                     }finally {
-                         sendtoSpeechBluService();
+                         sendtoSpeechBluService(message);
                     }
                     break;
 
             }//fin switch
         }else{
+            String text=context.getString(R.string.error_Server);
             if(gender.index==0){
-            data_validation.setText("Remote Server error:"+error);}else{
-                Log.e("Remote Server error:",error);
+            data_validation.setText(text+error);}else{
+                Log.e(text,error);
             }
 //            Intent intent2 = new Intent(Constants.SERVICE_UNKNOWN_STATE);
 //            LocalBroadcastManager.getInstance(context).sendBroadcastSync(intent2);
@@ -330,7 +331,7 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
             deviceaux = deviceDAO.getDeviceByAddress(this.address);
             text = deviceaux.getDeviceSpecification();
         }catch(Exception e) {
-            Log.i("JSON:",s+"ERROR CODE Database "+e.getMessage());
+            Log.i("HTTP_JSON_POST:",s+"ERROR CODE Database "+e.getMessage());
             text = " ";
         }finally {
             deviceDAO.close();
@@ -435,14 +436,14 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
         deviceDAO.close();
         return deviceaux.get_id();
     }
-    private void sendtoSpeechBluService(){
+    private void sendtoSpeechBluService(String message){
         Intent intent = new Intent(Constants.DEVICE_MESSAGE);
         if(message==null){message=" ";}
         intent.putExtra("message", message);
         LocalBroadcastManager.getInstance(context).sendBroadcastSync(intent);
-       // Log.i("-----------INTENT Was SEND-------------",message);
-       // Intent intent2 = new Intent(Constants.SERVICE_UNKNOWN_STATE);
-       // LocalBroadcastManager.getInstance(context).sendBroadcastSync(intent2);
+       Log.i("-----------INTENT Was SEND-------------",message);
+       Intent intent2 = new Intent(Constants.SERVICE_UNKNOWN_STATE);
+       LocalBroadcastManager.getInstance(context).sendBroadcastSync(intent2);
 
     }
 
