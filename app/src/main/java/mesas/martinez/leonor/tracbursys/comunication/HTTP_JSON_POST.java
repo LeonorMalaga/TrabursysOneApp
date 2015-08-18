@@ -79,6 +79,8 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
     TextView data_validation;
     private String address="0";
     private String message;
+    private int rssi;
+    private int coberageAlert;
     //Variables to work with Database
     private Project projectaux;
     private ProjectDAO projectDAO;
@@ -88,9 +90,9 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
     private OrionJsonManager objectJsonManager;
     private Context context;
 
+
     //--------------------------Constructor-------------------------------//
-    public HTTP_JSON_POST(Context context, OrionJsonManager object, String address){
-       // stop Service and change the button text
+    public HTTP_JSON_POST(Context context, OrionJsonManager object, String address, int rssi){
         Intent intent = new Intent(Constants.SERVICE_WAIT_RESPONSE);
         LocalBroadcastManager.getInstance(context).sendBroadcastSync(intent);
         this.address=address;
@@ -98,6 +100,7 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
         this.gender=object.JsonGender;
         this.objectJsonManager=object;
         this.body=objectJsonManager.getStringJson();
+        this.rssi=rssi;
         SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(context);
         this.stringUrl = sharedPrefs.getString(Constants.SERVER, "@string/default_import_editText");
         //Http petition to get information from server
@@ -264,7 +267,6 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
                     }
                     break;
                 case 2:
-
                     try {
                         JSONObject json = new JSONObject(s);
                         //Log.i("case 2",s);
@@ -274,6 +276,9 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
                         }else{
                             //Log.i(" case 2 JSON",json.toString());
                             mdevice=objectJsonManager.getDeviceFromStringJson(json.toString());
+                            message=mdevice.getDeviceSpecification();
+                            String coverage=mdevice.getMaxRSSI();
+                            coberageAlert=(int)Integer.valueOf(coverage);
                             project_id=mdevice.getprojecto_id();
                             if(existDevice(project_id)){
                                 //update text in database
@@ -281,16 +286,18 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
                             }else{
                                 this.updateProject(mdevice);
                             }
-                            message=mdevice.getDeviceSpecification();
                         }
                     }catch(JSONException e){
                         Log.e("-----------ERROR Convirtiendo a JSON-------------",s);
                         message=getFromDatabase(s);
                         //e.printStackTrace();
+                    }catch(NumberFormatException e){
+                        Log.i("HTTP_JSON_POST ","!!NUMBERFORMATEXCEPTION!!");
+                        coberageAlert=-85;
                     }catch(Exception e) {
-                        Log.e("JSON exception case 2:", e.getMessage());
+                        Log.i("JSON exception case 2:","Excepcion no controlada");
                         e.printStackTrace();
-                        message="";
+                        message=" ";
                     }finally {
                          sendtoSpeechBluService(message);
                     }
@@ -437,11 +444,13 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
         return deviceaux.get_id();
     }
     private void sendtoSpeechBluService(String message){
+        Log.i("HTTP_JSON_POST es? rssi>=coberageAlert -->", this.rssi+" >"+this.coberageAlert);
+        if(this.rssi>=this.coberageAlert){
         Intent intent = new Intent(Constants.DEVICE_MESSAGE);
         if(message==null){message=" ";}
         intent.putExtra("message", message);
         LocalBroadcastManager.getInstance(context).sendBroadcastSync(intent);
-       Log.i("-----------INTENT Was SEND-------------",message);
+       Log.i("-----------INTENT Was SEND-------------",message);}
        Intent intent2 = new Intent(Constants.SERVICE_UNKNOWN_STATE);
        LocalBroadcastManager.getInstance(context).sendBroadcastSync(intent2);
 

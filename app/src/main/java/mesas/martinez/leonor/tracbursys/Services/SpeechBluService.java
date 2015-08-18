@@ -52,7 +52,7 @@ private TextToSpeech tts=null;
  private int min_timesensitivity = 100000000;
  private int time_sensitivity;
  private float min_movement;
- private ArrayList<BluetoothDevice> mDevicesArray;
+ private ArrayList<Deviceaux> mDevicesArray;
 //----Bluetooth-Variables/Contans,enums--//    
 public static enum State {
     UNKNOWN,
@@ -102,7 +102,7 @@ public static enum State {
             tts.setSpeechRate(0.5f);
     //}
 
-        mDevicesArray= new ArrayList<BluetoothDevice>();
+        mDevicesArray= new ArrayList<Deviceaux>();
         sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
         LocalBroadcastManager.getInstance(this).registerReceiver(mReceiver, new IntentFilter(Constants.DEVICE_MESSAGE));
         LocalBroadcastManager.getInstance(this).registerReceiver(mReceiver, new IntentFilter(Constants.SERVICE_STOP));
@@ -273,13 +273,13 @@ public static enum State {
     public void onLeScan(final BluetoothDevice device, int rssi, byte[] scanRecord) {
 
         address = device.getAddress().toString();
-        int auxint=rssi;
-        string_rssi = String.valueOf(auxint);
+        string_rssi = String.valueOf(rssi);
         device_name=device.getName();
         jsonManager=new OrionJsonManager() ;
         //String jsonString=jsonManager.SetJSONtoGetMessage("BLE", address);
         String jsonString=jsonManager.SetJSONtoGetAttributes("BLE", address,getApplicationContext());
-        jsonManager.setDeviceName(device_name);
+        if(device_name!=null){
+        jsonManager.setDeviceName(device_name);}
         //Log.d("-OnLeScan:-----","After SetJsonManager "+jsonString);
        // old_address = sharedPrefs.getString(Constants.DEVICE_ADDRESS, "0");
        // Log.d("-OnLeScan:-----","Compare"+old_address+"=="+address+"-->"+(old_address.equals(address)));
@@ -288,7 +288,7 @@ public static enum State {
 //            mDevicesArray.add(device);
             //if (!old_address.equals(address)) {
                 Log.d("OnLeScan","----New Device--- address: "+ address+ " rssi "+string_rssi);
-                new HTTP_JSON_POST(this, jsonManager,address).execute();
+                new HTTP_JSON_POST(this, jsonManager,address,rssi).execute();
 
 //            } else {
 //                Log.d("OnLeScan","----Detected device again----");
@@ -422,6 +422,7 @@ public static enum State {
     //---------------------Fin Accelerometer-------------------//
     //---------------------Device Aux-------------------------//
     private class Deviceaux {
+        //state=0 acercandose, state=1 alejandose
         private int state;
         private int count;
         private double outOfRegion;
@@ -458,6 +459,15 @@ public static enum State {
             this.lastdBmAverage = -77.0;
             this.outOfRegion = -85.0;
             this.text = "Danger";
+        }
+        Deviceaux(Device device,Double rssi) {
+            this.address = device.getmDeviceAddress();
+            this.state = 0;
+            this.count = 0;
+            this.dBmAverage = Double.valueOf(device.getMaxRSSI());
+            this.lastdBmAverage = rssi;
+            this.outOfRegion = Double.valueOf(device.getMaxRSSI())-3;
+            this.text = device.getDeviceSpecification();
         }
         public int getState() {
             return state;

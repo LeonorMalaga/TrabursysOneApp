@@ -282,17 +282,19 @@ public class OrionJsonManager {
                         case "{\"value\":\"InstallerDNIorNIF\"":
                             aux=r[2].split(":");
                             aux2=aux[1].substring(0,aux[1].length()-1);
+                            aux2=aux2.replace("\"","");
                             this.installerDNIorNIF=aux2;
                             Log.i("---[ "+i+" , type: InstallerDNIorNIF]----",this.installerDNIorNIF);
                             break;
                         case "{\"value\":\"ProjectName\"":
                             aux=r[2].split(":");
                             aux2=aux[1].substring(0,aux[1].length()-1);
+                            aux2=aux2.replace("\"","");
                             this.projectName=aux2;
                             Log.i("---[ "+i+" , type: ProjectName]----",aux2);
                             ProjectDAO projectDAO=new ProjectDAO(context);
                             projectDAO.open();
-                            Project projectaux=projectDAO.getProjectByName("Default");
+                            Project projectaux=projectDAO.getProjectByName(projectName);
                             projectDAO.close();
                             this.project_id=projectaux.get_id();
 
@@ -303,7 +305,8 @@ public class OrionJsonManager {
                             if(r[2].equals("\"name\":\"message\"}")){
                             //message
                             aux=r[0].split(":");
-                            this.message=aux[1];
+                            String aux1=aux[1].replace("\"","");
+                            this.message=aux1;
                             Log.i("---[ "+i+" , type: message]----",this.message);
                             }
                             break;
@@ -312,19 +315,23 @@ public class OrionJsonManager {
                     break;
                 case "\"type\":\"date\"":
                     aux=r[0].split(":");
-                    this.date=aux[1];
+                    String aux1=aux[1].replace("\"","");
+                    this.date=aux1;
                     //Log.i("---[ "+i+" , type: date]----",aux[1]);
                     break;
                 case "\"type\":\"dBm\"":
                     aux=r[0].split(":");
-                    this.coverageAlert=aux[1];
-                    //Log.i("---[ "+i+" , type: dBm]----",aux[1]);
+                    String aux0r=aux[1].replace("\"","");
+                    this.coverageAlert=aux0r;
+                    Log.i("---[ "+i+" , type: dBm]----",this.coverageAlert);
                     break;
                 default:
                     //coor case
                     aux=r[0].split(":");
-                    this.latitude=aux[1];
-                    this.longitude=r[1];
+                    String aux1r=aux[1].replace("\"","");
+                    this.latitude=aux1r;
+                    String r1=r[1].replace("\"","");
+                    this.longitude=r1;
                     //Log.i("---[ "+i+" , type: coor]----",this.latitude+","+this.longitude);
                     break;
             }
