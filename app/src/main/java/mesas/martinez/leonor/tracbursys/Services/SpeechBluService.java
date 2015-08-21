@@ -151,6 +151,7 @@ public static enum State {
 
         if(start!=false){
             start = false;
+            mDevicesArray.clear();
             mBluetoothAdapter.stopLeScan(SpeechBluService.this);
             this.setState(State.DISCONNECTING);
             // Stop the TTS Engine when you do not require it
@@ -294,7 +295,8 @@ public static enum State {
             LocalBroadcastManager.getInstance(this).sendBroadcastSync(intent);
             start=false;
         } else {
-            mDevicesArray.clear();
+            //Log.i("starScan","-----------------------------------!!!!!---mDeviceArray-----Clear--!!!!--------------------------------");
+           // mDevicesArray.clear();
             SpeechBluService.this.start();
         }
     }
@@ -427,6 +429,5 @@ public static enum State {
     }
 
     //---------------------Fin Accelerometer-------------------//
-
 
 }
