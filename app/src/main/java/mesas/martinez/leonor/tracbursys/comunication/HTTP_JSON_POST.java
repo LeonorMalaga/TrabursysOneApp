@@ -34,6 +34,7 @@ import java.net.URL;
 import java.net.HttpURLConnection;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
+import java.util.ArrayList;
 
 import mesas.martinez.leonor.tracbursys.R;
 import mesas.martinez.leonor.tracbursys.Services.GPSservice;
@@ -43,7 +44,6 @@ import mesas.martinez.leonor.tracbursys.model.DeviceDAO;
 import mesas.martinez.leonor.tracbursys.model.OrionJsonManager;
 import mesas.martinez.leonor.tracbursys.model.Project;
 import mesas.martinez.leonor.tracbursys.model.ProjectDAO;
-
 
 /**
  * Created by Leonor Martinez Mesas on 24/07/15.
@@ -85,7 +85,8 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
     private Project projectaux;
     private ProjectDAO projectDAO;
     private int project_id;
-    private Device deviceaux;
+    private int device_id;
+    private Device mDevice;
     private DeviceDAO deviceDAO;
     private OrionJsonManager objectJsonManager;
     private Context context;
@@ -181,7 +182,6 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
         super.onPostExecute(s);
         //Log.i("HTTP_JSON_POST onPostExecute",s);
         String message=" ";
-        Device mdevice;
         //If all go well, save the device in the Database
         if(s!="0"){
             switch(gender.index) {
@@ -203,13 +203,13 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
                         projectDAO.open();
                         projectaux = projectDAO.getProjectByName(project_name);
                         projectDAO.close();
-                        deviceaux = new Device(projectaux.get_id(), address, mlatitude, mlongitude, name, message, rssi);
+                        mDevice =new Device(projectaux.get_id(), address, mlatitude, mlongitude, name, message, rssi);
                         deviceDAO = new DeviceDAO(context);
                         deviceDAO.open();
-                        int device_id = deviceDAO.create(deviceaux);
+                        int device_id = deviceDAO.create(mDevice);
                         deviceDAO.close();
 
-                deviceaux.set_id(device_id);
+                mDevice.set_id(device_id);
                 if (device_id == -1) {
                     text1=context.getString(R.string.saved_error);
                     text2=context.getString(R.string.with_text);
@@ -253,9 +253,9 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
                                     mlatitude = String.valueOf(latitude);
                                     mlongitude = String.valueOf(longitude);
                                 }
-                                mdevice = new Device(-1, this.address, String.valueOf(latitude),String.valueOf(longitude), "Anonimous", message, "-78");
+                                mDevice = new Device(-1, this.address, String.valueOf(latitude),String.valueOf(longitude), "Anonimous", message, "-78");
                                 //--------------Fin create mdevice---------//
-                                this.updateProject(mdevice);
+                                this.updateProject();
                             }
                         }
                         }catch(JSONException e){
@@ -272,20 +272,29 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
                         //Log.i("case 2",s);
                         if(json.has("errorCode")){
                             //find text in database
+
                             message=getFromDatabase(s);
+                            if(message==null){message=" ";}
+                            Log.e("Case2-----------Json.has ERROR code-------------",message);
                         }else{
                             //Log.i(" case 2 JSON",json.toString());
-                            mdevice=objectJsonManager.getDeviceFromStringJson(json.toString());
-                            message=mdevice.getDeviceSpecification();
-                            String coverage=mdevice.getMaxRSSI();
+                            mDevice=objectJsonManager.getDeviceFromStringJson(json.toString());
+                            message=mDevice.getDeviceSpecification();
+                            String coverage=mDevice.getMaxRSSI();
                             coberageAlert=(int)Integer.valueOf(coverage);
-                            project_id=mdevice.getprojecto_id();
+                            project_id=mDevice.getprojecto_id();
+                            Log.i("Case2-----------Wait update database-----------project_id: ",String.valueOf(project_id));
+
                             if(existDevice(project_id)){
                                 //update text in database
-                                this.updateDevice(mdevice);
+                                this.device_id=this.updateDevice();
                             }else{
-                                this.updateProject(mdevice);
+                                Log.i("Case2---------Np exist Device--: ","Update Project");
+                                this.updateProject();
                             }
+
+                            Log.i("Case2-----------FIN update database-----------device_id: ",String.valueOf(this.device_id));
+
                         }
                     }catch(JSONException e){
                         Log.e("-----------ERROR Convirtiendo a JSON-------------",s);
@@ -317,6 +326,11 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
 
     }
 //-------------------Mi-Methods-------------------------------//
+
+    public Device getmDevice() {
+        return mDevice;
+    }
+
     private String inputStreamToString(InputStream is) throws IOException {
         String line;
         StringBuilder total=new StringBuilder();
@@ -335,8 +349,8 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
         try {
             deviceDAO = new DeviceDAO(context);
             deviceDAO.open();
-            deviceaux = deviceDAO.getDeviceByAddress(this.address);
-            text = deviceaux.getDeviceSpecification();
+            mDevice = deviceDAO.getDeviceByAddress(this.address);
+            text = mDevice.getDeviceSpecification();
         }catch(Exception e) {
             Log.i("HTTP_JSON_POST:",s+"ERROR CODE Database "+e.getMessage());
             text = " ";
@@ -346,10 +360,10 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
         return text;
     }
     //
-    private int updateProject(Device mydevice){
-        Log.i("HTTP_JSON_POST","updateProject");
+    private void updateProject(){
         int result=-1;
-        int project_id=mydevice.getprojecto_id();
+        Device deviceaux;
+        Project mprojectaux;
         //update text in database
         try {
             deviceDAO = new DeviceDAO(context);
@@ -359,64 +373,110 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
             //is Device in my Database?
             if(project_id==-1){
                 deviceaux = deviceDAO.getDeviceByAddress(this.address);
-                project_id=deviceaux.getprojecto_id();
-                mydevice.setprojecto_id(project_id);
+                mDevice.set_id(deviceaux.get_id());
+                mDevice.setprojecto_id(deviceaux.getprojecto_id());
+               // Log.i("HTTP_JSON_POST","get device by addres, id proyect: " +String. valueOf(mDevice.getprojecto_id())+", id device="+String. valueOf(mDevice.get_id()));
             }else{
-                deviceaux=deviceDAO.getDeviceByAddressAndProject(this.address,mydevice.getprojecto_id());
+                deviceaux=deviceDAO.getDeviceByAddressAndProject(this.address,mDevice.getprojecto_id());
+                mDevice.set_id(deviceaux.get_id());
+                mDevice.setprojecto_id(deviceaux.getprojecto_id());
+                //Log.i("HTTP_JSON_POST","get device by addres, id proyect: " +String. valueOf(mDevice.getprojecto_id())+", id device="+String. valueOf(mDevice.get_id()));
             }
 
-            if (deviceaux.get_id() != -1) {
-                //The device exists
-                mydevice.set_id(deviceaux.get_id());
-                deviceDAO.update(mydevice);
-                Log.i("JSON:","DEVICE UPDATE"+this.address+" "+message);
-            } else {
-                //Be careful the project id  exits, int other case, create a new project
 
-                projectaux= projectDAO.getProjectByID(project_id);
-                if(projectaux.get_id()==-1){
-                    //Create new project
-                    projectaux=projectDAO.getProjectByName("Default");
-                    project_id=projectaux.get_id();
-                    if(project_id==-1){
-                    projectaux=new Project("Default","0034667442487");
-                    project_id=projectaux.get_id();
+            if (mDevice.get_id() != -1) {
+                this.device_id=mDevice.get_id();
+                this.project_id=mDevice.getprojecto_id();
+                //The device exists
+                deviceDAO.update(mDevice);
+                //Log.i("JSON:","DEVICE UPDATE "+this.address);
+            }else {
+
+                if(mDevice.getprojecto_id()==-1){
+                    Log.i("HTTP_JSON_POST","project_id==-1");
+                        //get Default project
+                        mprojectaux=projectDAO.getProjectByName("Default");
+                        mDevice.setprojecto_id(mprojectaux.get_id());
+
+                        Log.i("HTTP_JSON_POST","--Get Default..project_id : "+String.valueOf(mDevice.getprojecto_id()));
+
+
+                        if(mDevice.getprojecto_id()==-1){
+                            //Create new project
+                            Log.i("HTTP_JSON_POST","--Creating Default project.. : ");
+                            mprojectaux=new Project("Default","0034667442487");
+                            this.project_id=projectDAO.create(mprojectaux);
+                            mDevice.setprojecto_id(this.project_id);
+                            Log.i("HTTP_JSON_POST","--Created Default project..project_id : "+String.valueOf(mDevice.getprojecto_id()));
+                        }
+
                     }
-                    mydevice.setprojecto_id(project_id);
+                if(mDevice.getprojecto_id()!=-1){
+                deviceaux = deviceDAO.getDeviceByAddressAndProject(this.address, mDevice.getprojecto_id());
+                 mDevice.set_id(deviceaux.get_id());
+                Log.i("HTTP_JSON_POST","--Is device in project? id_device:"+String.valueOf(mDevice.get_id())+" project_id"+String.valueOf(mDevice.getprojecto_id()));
                 }
-                result=deviceDAO.create(mydevice);
-                Log.i("JSON:","NEW DEVICE SAVE:"+this.address+" "+message+", in Project:"+projectaux.getmprojectName());
+                if (mDevice.get_id()!= -1) {
+                            this.device_id=mDevice.get_id();
+                            Log.i("HTTP_JSON_POST","--Device exits in project, device id:  "+String.valueOf(this.device_id));
+                            deviceDAO.update(mDevice);
+                            Log.i("HTTP_JSON_POST","--Device undated--");
+                        }else {
+                        deviceaux = deviceDAO.getDeviceByAddress(this.address);
+                        project_id=deviceaux.getprojecto_id();
+                        device_id=deviceaux.get_id();
+                        Log.i("HTTP_JSON_POST","--Exit device--:"+String.valueOf(this.device_id)+" project_id"+String.valueOf(this.project_id));
+                        mDevice.setprojecto_id(project_id);
+                        mDevice.set_id(device_id);
+                    if(this.device_id!=-1){
+                        Log.i("HTTP_JSON_POST","--Device exits, device id :  "+String.valueOf(this.device_id));
+                        deviceDAO.update(mDevice);
+                        Log.i("HTTP_JSON_POST","--Device undated--");
+                    }else{
+                            this.device_id = deviceDAO.create(mDevice);
+                            mDevice.set_id(device_id);
+                            Log.i("HTTP_JSON_POST:", "NEW DEVICE SAVE with id :" + String.valueOf(this.device_id) + "address" + this.address + " " + message + ", in Project:" + projectaux.getmprojectName());
+                        }}
             }
 
         }catch(CursorIndexOutOfBoundsException e){
-
+            Log.i("HTTP_JSON_POST:","CursorIndexOfBoundException device_id=-1");
+             this.device_id=-1;
         }finally {
             projectDAO.close();
             deviceDAO.close();
+            Log.i("HTTP_JSON_POST UPDATE_PROJECT","set id= "+this.device_id);
+
         }
-        return result;
+
     }
 
     private boolean existDevice(){
+        Device deviceaux;
         boolean exist=false;
         deviceDAO = new DeviceDAO(context);
         deviceDAO.open();
         deviceaux = deviceDAO.getDeviceByAddress(this.address);
         project_id=deviceaux.getprojecto_id();
-        if (deviceaux.get_id() != -1) {
+        device_id=deviceaux.get_id();
+        if (device_id!= -1) {
             exist=true;
+            Log.i("EXISTDevice-true----------device_id: ",String.valueOf(this.device_id));
         }
         deviceDAO.close();
         return exist;
     }
     private boolean existDevice(int id_project){
+        Device mdeviceaux;
         boolean exist=false;
         deviceDAO = new DeviceDAO(context);
         deviceDAO.open();
-        deviceaux = deviceDAO.getDeviceByAddressAndProject(this.address, id_project);
-        project_id=deviceaux.getprojecto_id();
-        if (deviceaux.get_id() != -1) {
+        mdeviceaux = deviceDAO.getDeviceByAddressAndProject(this.address, id_project);
+        project_id=mdeviceaux.getprojecto_id();
+        device_id=mdeviceaux.get_id();
+        if (device_id!= -1) {
             exist=true;
+            Log.i("EXISTDevice-true----------device_id: ",String.valueOf(this.device_id));
         }
         deviceDAO.close();
         return exist;
@@ -425,34 +485,56 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
         int result=-1;
         deviceDAO = new DeviceDAO(context);
         deviceDAO.open();
-        deviceaux = deviceDAO.getDeviceByAddress(this.address);
-        deviceaux.setDeviceSpecification(message);
-        project_id=deviceaux.getprojecto_id();
-        deviceDAO.update(deviceaux);
+        mDevice = deviceDAO.getDeviceByAddress(this.address);
+        mDevice.setDeviceSpecification(message);
+        project_id=mDevice.getprojecto_id();
+        deviceDAO.update(mDevice);
         deviceDAO.close();
-        return deviceaux.get_id();
+        return mDevice.get_id();
     }
-    private int updateDevice(Device device){
-        Log.i("HTTP_JSON_POST","updateDevice");
+    private int updateDevice(){
+        Log.i("HTTP JSON POST UPDATE DEVICE",this.address);
+        Device deviceaux;
+
         int result=-1;
         deviceDAO = new DeviceDAO(context);
         deviceDAO.open();
         deviceaux = deviceDAO.getDeviceByAddress(this.address);
-        device.set_id(deviceaux.get_id());
-        deviceDAO.update(device);
+        int device_id=deviceaux.get_id();
+        Log.i("UPDATEDEVICE","ser id= "+device_id);
+        mDevice.set_id(device_id);
+        deviceDAO.update(mDevice);
         deviceDAO.close();
-        return deviceaux.get_id();
+        Log.i("HTTP_JSON_POST","updateDevice id= "+device_id);
+        return device_id;
     }
     private void sendtoSpeechBluService(String message){
-        Log.i("HTTP_JSON_POST es? rssi>=coberageAlert -->", this.rssi+" >"+this.coberageAlert);
+
+        Log.i("HTTP_JSON_POST es? rssi>=coberageAlert -->", this.rssi+" >"+this.coberageAlert+", device id "+device_id);
         if(this.rssi>=this.coberageAlert){
-        Intent intent = new Intent(Constants.DEVICE_MESSAGE);
-        if(message==null){message=" ";}
-        intent.putExtra("message", message);
-        LocalBroadcastManager.getInstance(context).sendBroadcastSync(intent);
-       Log.i("-----------INTENT Was SEND-------------",message);}
+        int device_id=mDevice.get_id();
+//        if(message==null){message=" ";}
+//        Intent intent = new Intent(Constants.DEVICE_MESSAGE);
+//         intent.putExtra("message", message);
+//        LocalBroadcastManager.getInstance(context).sendBroadcastSync(intent);
+//       Log.i("-----------INTENT Was SEND-------------",message);
+                Log.i("HTTP_JSON_POST ","deviceid !=-1 ");
+                Intent intent = new Intent(Constants.DEVICE);
+                this.address = mDevice.getmDeviceAddress();
+                this.message= mDevice.getDeviceSpecification();
+                intent.putExtra("id",device_id);
+                intent.putExtra("rssi",rssi);
+                intent.putExtra("coberageAlert",coberageAlert);
+                intent.putExtra("message",this.message);
+                intent.putExtra("address", this.address);
+                LocalBroadcastManager.getInstance(context).sendBroadcastSync(intent);
+                Log.i("-----------INTENT DEVICE Was SEND-------------", String.valueOf(mDevice.get_id()));
+
+
+        }else{
+
        Intent intent2 = new Intent(Constants.SERVICE_UNKNOWN_STATE);
-       LocalBroadcastManager.getInstance(context).sendBroadcastSync(intent2);
+       LocalBroadcastManager.getInstance(context).sendBroadcastSync(intent2);}
 
     }
 

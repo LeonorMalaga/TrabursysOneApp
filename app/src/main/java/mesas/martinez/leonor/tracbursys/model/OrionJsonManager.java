@@ -317,13 +317,13 @@ public class OrionJsonManager {
                     aux=r[0].split(":");
                     String aux1=aux[1].replace("\"","");
                     this.date=aux1;
-                    //Log.i("---[ "+i+" , type: date]----",aux[1]);
+                    Log.i("---[ "+i+" , type: date]----",aux[1]);
                     break;
                 case "\"type\":\"dBm\"":
                     aux=r[0].split(":");
                     String aux0r=aux[1].replace("\"","");
                     this.coverageAlert=aux0r;
-                    Log.i("---[ "+i+" , type: dBm]----",this.coverageAlert);
+                   Log.i("---[ "+i+" , type: dBm]----",this.coverageAlert);
                     break;
                 default:
                     //coor case
@@ -332,7 +332,7 @@ public class OrionJsonManager {
                     this.latitude=aux1r;
                     String r1=r[1].replace("\"","");
                     this.longitude=r1;
-                    //Log.i("---[ "+i+" , type: coor]----",this.latitude+","+this.longitude);
+                     Log.i("---[ "+i+" , type: coor]----",this.latitude+","+this.longitude);
                     break;
             }
 //            for(int j=0; j<r.length; j++){
@@ -340,7 +340,7 @@ public class OrionJsonManager {
 //            }
         }
         Device device=new Device(this.project_id, this.id, this.latitude, this.longitude,this.deviceName, this.message, this.coverageAlert);
-        Log.i("OrionJsonManager:--DEVICE--/\n ",device.toString());
+        Log.i("OrionJsonManager:--DEVICE--/\n ",device.toString()+"/\n");
         return device;
     }
 }

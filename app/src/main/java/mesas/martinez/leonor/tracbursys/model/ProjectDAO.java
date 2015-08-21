@@ -10,6 +10,7 @@ import android.database.Cursor;
 import android.database.CursorIndexOutOfBoundsException;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
+import android.util.Log;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -91,6 +92,7 @@ public class ProjectDAO {
     }
 
     public Project getProjectByName(String name) {
+        Log.i("ProjectDAO", "getProjectByName : " + name);
         Project project = new Project();
         try {
             Cursor cursor = database.query(MySQLiteHelper.TABLE_PROJECTS,

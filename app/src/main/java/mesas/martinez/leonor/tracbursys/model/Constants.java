@@ -36,5 +36,6 @@ public static final String SERVICE_UNKNOWN_STATE="Leonor.martinez.mesas.user.act
 public static final String DEVICE_ADDRESS="Leonor.martinez.mesas.user.activity.DEVICE_ADDRESS";
 public static final String DEVICE_RSSI="Leonor.martinez.mesas.user.activity.DEVICE_RSSI";
 public static final String DEVICE_MESSAGE="Leonor.martinez.mesas.user.activity.DEVICE_RSSI";
+public static final String DEVICE="Leonor.martinez.mesas.user.activity.DEVICE";
 public static final String BLUETOOTH_OFF="Leonor.martinez.mesas.user.activity.BLUETOOTH_OFF";
 }

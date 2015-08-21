@@ -14,19 +14,19 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Handler;
-import android.os.Messenger;
+
 import android.preference.PreferenceManager;
 import android.speech.tts.TextToSpeech;
+
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.widget.Toast;
 
+
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
+
 
 import mesas.martinez.leonor.tracbursys.R;
 import mesas.martinez.leonor.tracbursys.comunication.HTTP_JSON_POST;
@@ -34,6 +34,7 @@ import mesas.martinez.leonor.tracbursys.model.Constants;
 import mesas.martinez.leonor.tracbursys.model.Device;
 import mesas.martinez.leonor.tracbursys.model.DeviceDAO;
 import mesas.martinez.leonor.tracbursys.model.OrionJsonManager;
+import mesas.martinez.leonor.tracbursys.model.Deviceaux;
 
 /**
  * Created by root on 5/08/15.
@@ -66,8 +67,7 @@ public static enum State {
 
     private static final long SCAN_TIMEOUT = 2000;
     private static final long WAIT_PERIOD = 5000;
-    private final List<Messenger> mClients = new LinkedList<Messenger>();
-    private final Map<String, BluetoothDevice> mDevices = new HashMap<String, BluetoothDevice>();
+
 
     private String address;
     private String device_name;
@@ -77,6 +77,7 @@ public static enum State {
     private BluetoothAdapter mBluetoothAdapter= null;
     private State mState;
     private Handler mHandler;
+    private HTTP_JSON_POST jsonPost;
 
    //-----DataBase-Variables--//
    private DeviceDAO deviceDAO;
@@ -96,14 +97,18 @@ public static enum State {
     protected void onHandleIntent(Intent intent) {
         //to can reproduce the messages
         toSpeak = " ";
-        //if(tts==null){
+        if (tts != null) {
+            tts.stop();
+            tts.shutdown();
+            tts=null;
+        }
             Log.i("Create TexToSpeech", "new tts");
             tts = new TextToSpeech(getBaseContext(),this);
             tts.setSpeechRate(0.5f);
-    //}
 
         mDevicesArray= new ArrayList<Deviceaux>();
         sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
+        LocalBroadcastManager.getInstance(this).registerReceiver(mReceiver, new IntentFilter(Constants.DEVICE));
         LocalBroadcastManager.getInstance(this).registerReceiver(mReceiver, new IntentFilter(Constants.DEVICE_MESSAGE));
         LocalBroadcastManager.getInstance(this).registerReceiver(mReceiver, new IntentFilter(Constants.SERVICE_STOP));
         LocalBroadcastManager.getInstance(this).registerReceiver(mReceiver, new IntentFilter(Constants.SERVICE_UNKNOWN_STATE));
@@ -169,6 +174,32 @@ public static enum State {
         public void onReceive(Context context, Intent intent) {
             String action=intent.getAction();
             switch(action) {
+                case Constants.DEVICE:
+                    int id=intent.getIntExtra("id",-1);
+                    Log.i("OnL--INTENT DEVICE received-----------id--",String.valueOf(id));
+                    if(id!=-1){
+                    int mrssi=intent.getIntExtra("rssi",0);
+                    int mcoberageAlert=intent.getIntExtra("coverageAlert",0);
+                    toSpeak = intent.getStringExtra("message");
+                    String maddress=intent.getStringExtra("address");
+                    Log.i("OnL--INTENT DEVICE received-------------",maddress+", mesage: "+toSpeak+", rssi "+String.valueOf(mrssi)+", coberageAlert"+String.valueOf(mrssi));
+
+                    if(!toSpeak.equals(null)){
+                        SpeechBluService.this.speakTheText( );
+                        Deviceaux mdeviceaux=new Deviceaux(maddress,mcoberageAlert,toSpeak,mrssi);
+                        int index = mDevicesArray.indexOf(mdeviceaux);
+                        Log.d("OnL--INTEN DEVICE--","------ index: "+ String.valueOf(index));
+                        if(index<0){
+                            mDevicesArray.add(mdeviceaux);
+                            index=mDevicesArray.indexOf(mdeviceaux);
+                            Log.d("OnL--INTEN DEVICE--","---device added--- index: "+ String.valueOf(index));
+                        }else{
+                            mDevicesArray.set(index,mdeviceaux);
+                            Log.d("OnL--INTEN DEVICE--","---device update--- index: "+ String.valueOf(index));
+                        }
+                    }}
+                    SpeechBluService.this.setState(State.UNKNOWN);
+                    break;
                 case Constants.DEVICE_MESSAGE:
                     toSpeak = intent.getStringExtra("message");
                     Log.i("-----------INTENT received-------------","---DEVICE_MESSAGE--"+toSpeak);
@@ -263,7 +294,7 @@ public static enum State {
             LocalBroadcastManager.getInstance(this).sendBroadcastSync(intent);
             start=false;
         } else {
-            mDevices.clear();
+            mDevicesArray.clear();
             SpeechBluService.this.start();
         }
     }
@@ -280,42 +311,18 @@ public static enum State {
         String jsonString=jsonManager.SetJSONtoGetAttributes("BLE", address,getApplicationContext());
         if(device_name!=null){
         jsonManager.setDeviceName(device_name);}
-        //Log.d("-OnLeScan:-----","After SetJsonManager "+jsonString);
-       // old_address = sharedPrefs.getString(Constants.DEVICE_ADDRESS, "0");
-       // Log.d("-OnLeScan:-----","Compare"+old_address+"=="+address+"-->"+(old_address.equals(address)));
-            //If It detected a new device
-//        if(!mDevicesArray.contains(device)){
-//            mDevicesArray.add(device);
-            //if (!old_address.equals(address)) {
+        Deviceaux auxdevice=new Deviceaux(rssi,address);
+        int index=mDevicesArray.indexOf(auxdevice);
+        Log.d("OnLeScan","----Device detected--- index: "+ String.valueOf(index));
+       if(index<0){
                 Log.d("OnLeScan","----New Device--- address: "+ address+ " rssi "+string_rssi);
                 new HTTP_JSON_POST(this, jsonManager,address,rssi).execute();
 
-//            } else {
-//                Log.d("OnLeScan","----Detected device again----");
-//
-//                old_string_rssi = sharedPrefs.getString(Constants.DEVICE_RSSI, "0");
-//                Integer auxold = Integer.decode(old_string_rssi);
-//                Integer aux = Integer.decode(string_rssi);
-//                Integer rest = auxold - aux;
-////                //int primitiverest = rest.intValue();
-//                //Log.d("-OnLeScan:------"+auxold+"-"+aux+"--->: "," "+rest);
-//                if (rest > 10 || rest < -10) {
-//////                    Log.d(TAG, "------device Detecte AGAIN---to Speak---:" + toSpeak);
-//////
-//////                    deviceaux = deviceDAO.getDeviceByAddress(device.getAddress().toString());
-//////                    toSpeak = deviceaux.getDeviceSpecification();
-//                   // speakTheText(toSpeak);
-//                    new HTTP_JSON_POST(this, jsonManager,address).execute();
-//                    PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
-//                            .edit()
-//                            .putString(Constants.DEVICE_ADDRESS, address)
-//                            .commit();
-//                    PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
-//                            .edit()
-//                            .putString(Constants.DEVICE_RSSI, string_rssi)
-//                            .commit();
-//                }
-//            }
+           } else {
+               Log.d("OnLeScan","----Detected device again----"+ address+ " rssi "+string_rssi);
+               auxdevice=mDevicesArray.get(index);
+
+           }
 
     }
     //---------------To now the movement direction-------------//
@@ -420,114 +427,6 @@ public static enum State {
     }
 
     //---------------------Fin Accelerometer-------------------//
-    //---------------------Device Aux-------------------------//
-    private class Deviceaux {
-        //state=0 acercandose, state=1 alejandose
-        private int state;
-        private int count;
-        private double outOfRegion;
-        private double dBmAverage;
-        private double lastdBmAverage;
-        private String address;
-        private String text;
 
-        Deviceaux(double dBmAverage, String address, String text) {
-            this.address = address;
-            this.text = text;
-            this.dBmAverage = dBmAverage;
-            this.lastdBmAverage = -77.0;
-            this.outOfRegion = -85.0;
-            this.state = 0;
-            this.count = 0;
-        }
-
-        Deviceaux(String address) {
-            this.address = address;
-            this.state = 0;
-            this.count = 0;
-            this.dBmAverage = -85.0;
-            this.lastdBmAverage = -77.0;
-            this.outOfRegion = -85.0;
-            this.text = "Danger";
-        }
-
-        Deviceaux(String address,String text) {
-            this.address = address;
-            this.state = 0;
-            this.count = 0;
-            this.dBmAverage = -85.0;
-            this.lastdBmAverage = -77.0;
-            this.outOfRegion = -85.0;
-            this.text = "Danger";
-        }
-        Deviceaux(Device device,Double rssi) {
-            this.address = device.getmDeviceAddress();
-            this.state = 0;
-            this.count = 0;
-            this.dBmAverage = Double.valueOf(device.getMaxRSSI());
-            this.lastdBmAverage = rssi;
-            this.outOfRegion = Double.valueOf(device.getMaxRSSI())-3;
-            this.text = device.getDeviceSpecification();
-        }
-        public int getState() {
-            return state;
-        }
-
-        public void setState(int state) {
-            this.state = state;
-        }
-
-        public int getCount() {
-            return count;
-        }
-
-        public void setCount(int count) {
-            this.count = count;
-        }
-
-        public String getAddress() {
-            return address;
-        }
-
-        public String getText() {
-            return text;
-        }
-
-        public void setText(String text) {
-            this.text = text;
-        }
-
-        public double getdBmAverage() {
-            return dBmAverage;
-        }
-
-        public void setdBmAverage(double dBmAverage) {
-            this.dBmAverage = dBmAverage;
-        }
-
-        public double getOutOfRegion() {
-            return outOfRegion;
-        }
-
-        public void setOutOfRegion(double outOfRegion) {
-            this.outOfRegion = outOfRegion;
-        }
-
-        public double getLastdBmAverage() {
-            return lastdBmAverage;
-        }
-
-        public void setLastdBmAverage(double lastdBmAverage) {
-            this.lastdBmAverage = lastdBmAverage;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            Deviceaux aux = (Deviceaux) o;
-            String address = aux.getAddress();
-            return this.address.equals(address);
-        }
-    }
-    //------------------------------Device aux--------------------//
 
 }

@@ -5,6 +5,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
+import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,8 +31,10 @@ public class DeviceDAO {
     };
 
     private Device cursorTo(Cursor cursor) {
+       // Log.i("DeviceDAO","cursorTo id:"+cursor.getCount());
         Device device = new Device();
         if(cursor.getCount()>1) {
+            //Log.i("DeviceDAO","setid :"+cursor.getInt(0));
             device.set_id(cursor.getInt(0));
             device.setprojecto_id(cursor.getInt(1));
             device.setDate(cursor.getString(2));
@@ -109,6 +112,9 @@ public class DeviceDAO {
         if (cursor != null) {
             cursor.moveToFirst();
             device = cursorTo(cursor);
+        }else{
+
+            Log.i("DeviceDAO", "getDeviceByID, cursor==null");
         }
         cursor.close();
         return device;
