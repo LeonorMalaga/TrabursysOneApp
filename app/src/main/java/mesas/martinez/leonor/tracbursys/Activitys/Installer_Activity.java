@@ -9,6 +9,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -109,12 +110,23 @@ public class Installer_Activity extends ActionBarActivity implements AdapterView
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_installer);
 
+
+    }
+
+
+    @Override
+    protected void onResume( ) {
+        super.onResume();
         SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         workMode = sharedPrefs.getString(Constants.WORKMODE, "1");
         Log.d("------------NOT FIRST--WOORK MODE----------: " + workMode.equals("0"), workMode);
         if (workMode.equals("0")) {
             startActivity(new Intent(getApplicationContext(), User_Activity.class));
         } else {
+            //stop service if exit
+            Intent intent = new Intent(Constants.SERVICE_STOP);
+            LocalBroadcastManager.getInstance(this).sendBroadcastSync(intent);
+            //
             specifications = (EditText) this.findViewById(R.id.device_specification_editText);
             data_validation = (TextView) this.findViewById(R.id.intaller_response_textView);
             data_validation.setVisibility(View.INVISIBLE);
@@ -217,8 +229,8 @@ public class Installer_Activity extends ActionBarActivity implements AdapterView
                 }//onItemClick
             });
         }
-    }
 
+    }
     public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
         // An item was selected. You can retrieve the selected item using
         String name = parent.getItemAtPosition(pos).toString();

@@ -43,17 +43,20 @@ public class SpeechBluService extends IntentService implements BluetoothAdapter.
 
 //------------------Variables---------------------//
 private static boolean start;
-private SharedPreferences sharedPrefs;
+private SharedPreferences sharePreference;
 private OrionJsonManager jsonManager;
 //--to-speak-Variables/Contans,enums---//
 private String toSpeak;
 private TextToSpeech tts=null;
  //-------------for accelerometer----------//
- private Accelerometer a;
+ private Accelerometer accelerometer;
  private int min_timesensitivity = 100000000;
  private int time_sensitivity;
  private float min_movement;
  private ArrayList<Deviceaux> mDevicesArray;
+ //----------------To now if we are near or far ago---to the device----//
+ private int measuresFORaverage;
+ private int diferAverage;
 //----Bluetooth-Variables/Contans,enums--//    
 public static enum State {
     UNKNOWN,
@@ -107,12 +110,23 @@ public static enum State {
             tts.setSpeechRate(0.5f);
 
         mDevicesArray= new ArrayList<Deviceaux>();
-        sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
+        sharePreference = PreferenceManager.getDefaultSharedPreferences(this);
+        tts = new TextToSpeech(this, this);
+        accelerometer = new Accelerometer();
         LocalBroadcastManager.getInstance(this).registerReceiver(mReceiver, new IntentFilter(Constants.DEVICE));
         LocalBroadcastManager.getInstance(this).registerReceiver(mReceiver, new IntentFilter(Constants.DEVICE_MESSAGE));
         LocalBroadcastManager.getInstance(this).registerReceiver(mReceiver, new IntentFilter(Constants.SERVICE_STOP));
         LocalBroadcastManager.getInstance(this).registerReceiver(mReceiver, new IntentFilter(Constants.SERVICE_UNKNOWN_STATE));
         LocalBroadcastManager.getInstance(this).registerReceiver(mReceiver, new IntentFilter(Constants.SERVICE_WAIT_RESPONSE));
+        measuresFORaverage=sharePreference.getInt(Constants.MEASURES,3);
+        diferAverage=sharePreference.getInt(Constants.DIFER,2);
+        min_movement=sharePreference.getInt(Constants.MOVEMENT,11);
+        min_movement=(float)min_movement/10;
+        time_sensitivity=sharePreference.getInt(Constants.MOVEMENT,20);
+        time_sensitivity=time_sensitivity*min_timesensitivity;
+        Log.d(Constants.TAG,"------------SETTINGS----------: /\n--int_movement----"+min_movement+"---diferAverage---"+diferAverage+"----measuresDORaverage---"+measuresFORaverage+"--------time sensitivity-------"+time_sensitivity);
+        accelerometer.setTime_sensitivity(time_sensitivity);
+        accelerometer.setMin_movement(min_movement);
         try {
         this.startScan();
         } catch (InterruptedException e) {
@@ -126,7 +140,7 @@ public static enum State {
                 synchronized (this) {
                     Log.d("---onHandleIntent WHILE---", "Start Scan");
                     this.startScan();
-                    this.wait(WAIT_PERIOD*2);}
+                    this.wait(WAIT_PERIOD);}
             } catch (InterruptedException e) {
                 Log.d("InterruptedException in While", "------------STOP----------");
                 start = false;
@@ -317,16 +331,87 @@ public static enum State {
         int index=mDevicesArray.indexOf(auxdevice);
         Log.d("OnLeScan","----Device detected--- index: "+ String.valueOf(index));
        if(index<0){
+           // The first time the user is in the region we say the  RegionEnter message ; and it save state.
                 Log.d("OnLeScan","----New Device--- address: "+ address+ " rssi "+string_rssi);
                 new HTTP_JSON_POST(this, jsonManager,address,rssi).execute();
 
            } else {
                Log.d("OnLeScan","----Detected device again----"+ address+ " rssi "+string_rssi);
-               auxdevice=mDevicesArray.get(index);
+               speakUpdateDeviceauxAgain(index,rssi);
 
            }
 
     }
+    //---------------Device again--------------------//
+    private void speakUpdateDeviceauxAgain(int index,int rssi){
+        Deviceaux auxdevice=mDevicesArray.get(index);
+
+        String address=auxdevice.getAddress();
+        String speak = auxdevice.getText();
+        int state = auxdevice.getState();
+        double limitRegion = auxdevice.getOutOfRegion();
+        double LastAverage = auxdevice.getdBmAverage();
+        auxdevice.setdBmAverage(rssi);
+        auxdevice.setLastdBmAverage(LastAverage);
+        double dBmAverage =auxdevice.getdBmAverage();
+        double difer = LastAverage - dBmAverage;
+        int count;
+        Log.d("SPEECHBLUSERVICE", "----" + address + "--------dBmAverage-----=" + dBmAverage + ", LastAverage=" + LastAverage + " difer= " + difer + " difer>0" + (difer > 0) + " difer> " + diferAverage + " " + (difer > diferAverage));
+
+// While the user is moving in the region , we calculate a mean of 3 updates before Indicate the movement.
+// when the user go out of the region. we say RegionOut message and it save state .
+
+            if (accelerometer.RangeOfTime()) {
+                count = auxdevice.getCount() + 1;
+                auxdevice.setCount(count);
+                Log.d("SPEECHBLUSERVICE", "----" + address + "-RangeOfTime----TRUE---count---=" + count + "(count > measuresFORaverage)= " + (count > measuresFORaverage));
+                //text movement of user
+                if (count > measuresFORaverage) {
+                    //say approach or move away
+                    //int a = new Double(dBmAverage).compareTo(new Double(LastAverage));
+                    Log.d("SPEECHBLUSERVICE", "----" + address + "-RangeOfTime----TRUE---difer---=" + difer  + "(difer > diferAverage)= " + (difer > diferAverage));
+                    if (difer > diferAverage) {
+                        //move away
+                        auxdevice.setCount(0);
+                        //Out off range?
+                        //int b = new Double(dBmAverage).compareTo(new Double(limitRegion - ajustOutOffRange));
+                        int b = new Double(dBmAverage).compareTo(new Double(limitRegion));
+                        if (b == -1) {
+                            count = 0;
+                           auxdevice.setCount(0);
+                            auxdevice.setLastdBmAverage(rssi);
+                            auxdevice.setdBmAverage(rssi);
+                            String Text=getResources().getString(R.string.Out_Of);
+                            toSpeak = Text+ speak;
+                            SpeechBluService.this.speakTheText( );
+                            mDevicesArray.remove(index);
+                           } else {
+                            String Text=getResources().getString(R.string.move_away_to);
+                            toSpeak = Text+ speak;
+                            SpeechBluService.this.speakTheText( );
+
+                        }
+
+                        auxdevice.setLastdBmAverage(dBmAverage);
+                    } else {
+                        Log.d("SPEECHBLUSERVICE", "----" + address + "-RangeOfTime----TRUE---difer---=" + difer  + "(difer < -diferAverage)= " + (difer < -diferAverage));
+                        //approach
+                        if (difer < -diferAverage) {
+                            count = 0;
+                            auxdevice.setCount(0);
+                            String Text=getResources().getString(R.string.approach_to);
+                            toSpeak = Text+ speak;
+                            SpeechBluService.this.speakTheText( );
+                            auxdevice.setLastdBmAverage(dBmAverage);
+                        }
+                    }
+                    Log.d("SPEECHBLUSERVICE", "--movin " +toSpeak+" "+ address);
+                }
+
+            }//Fin if a
+        }
+
+
     //---------------To now the movement direction-------------//
     class Accelerometer implements SensorEventListener {
 

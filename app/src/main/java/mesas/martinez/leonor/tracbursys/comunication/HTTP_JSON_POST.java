@@ -510,8 +510,8 @@ public class HTTP_JSON_POST extends AsyncTask<String,Void,String>{
     }
     private void sendtoSpeechBluService(String message){
         Log.i("HTTP_JSON_POST /\n SENDtoSpeechBluService , ¿es? rssi>=coberageAlert -->                    ", this.rssi+" >"+this.coberageAlert);
-
-        if(this.rssi>=this.coberageAlert){
+        double valanz=this.coberageAlert-2;
+        if(this.rssi>=valanz){
         int device_id=mDevice.get_id();
 //        if(message==null){message=" ";}
 //        Intent intent = new Intent(Constants.DEVICE_MESSAGE);

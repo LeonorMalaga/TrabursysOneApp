@@ -45,7 +45,12 @@ public class SettingsActivity extends PreferenceActivity {
         }
         addPreferencesFromResource(R.xml.pref_general);
        // bindPreferenceSummaryToValue(findPreference(Constants.URLGET));
-        bindPreferenceSummaryToValue(findPreference(Constants.SERVER));
+        bindPreferenceSummaryToValue(findPreference("work_mode_list"));
+        bindPreferenceSummaryToValue(findPreference("server"));
+        bindPreferenceSummaryToValue(findPreference("measuresFORaverage"));
+        bindPreferenceSummaryToValue(findPreference("diferAverage"));
+        bindPreferenceSummaryToValue(findPreference("movement"));
+        bindPreferenceSummaryToValue(findPreference("time"));
     }
 
     @Override
@@ -147,11 +152,14 @@ public class SettingsActivity extends PreferenceActivity {
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
             addPreferencesFromResource(R.xml.pref_general);
-            bindPreferenceSummaryToValue(findPreference(Constants.WORKMODE));
-            bindPreferenceSummaryToValue(findPreference(Constants.SAVEMODE));
+            bindPreferenceSummaryToValue(findPreference("work_mode_list"));
+            //bindPreferenceSummaryToValue(findPreference(Constants.SAVEMODE));
            // bindPreferenceSummaryToValue(findPreference(Constants.URLGET));
-            bindPreferenceSummaryToValue(findPreference(Constants.SERVER));
-
+            bindPreferenceSummaryToValue(findPreference("server"));
+            bindPreferenceSummaryToValue(findPreference("measuresFORaverage"));
+            bindPreferenceSummaryToValue(findPreference("diferAverage"));
+            bindPreferenceSummaryToValue(findPreference("movement"));
+            bindPreferenceSummaryToValue(findPreference("time"));
         }
     }
 

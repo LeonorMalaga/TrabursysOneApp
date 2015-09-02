@@ -72,6 +72,9 @@
     <string name="stopping"> Stopping the service, Bluetooth is OFF </string>
     <string name="turn_on_Bluetooth"> Please turn On your Bluetooth</string>
     <string name="can_not_detect_Ibeacon"> NOW YOU CAN NOT DETECT I-BEACONS </string>
+    <string name="Out_Of">  Out Of  </string>
+    <string name="approach_to">  Approach to </string>
+    <string name="move_away_to">   Move away to </string>
     <string name="stop_service"> STOP SERVICE </string>
     <string name="start_service"> START SERVICE</string>
     <!-- settings -->
@@ -88,7 +91,7 @@
         <item>0</item>
     </string-array>
 
-    <string name="pref_save_mode">Select save mode</string>
+   <!-- <string name="pref_save_mode">Select save mode</string>
 
     <string-array name="pref_work_save_list_titles">
         <item>LOCAL</item>
@@ -97,9 +100,22 @@
     <string-array name="pref_work_save_list_values">
         <item>1</item>
         <item>0</item>
-    </string-array>
+    </string-array>-->
     <string name="pref_server">DEFAULT SERVER ADREES:</string>
     <string name="title_activity_main_activity2">MainActivity2</string>
 
+    <string name="pref_get_url">WRITES GET URL:</string>
+    <string name="pref_default_get_url">http://10.27.39.100:8080/get/</string>
+    <string name="measuresFORaverage">NUMBER OF STEPS FO STABILIZE THE RECEIVED POWER:</string>
+    <string name="pref_default_measuresFORaverage">3</string>
+
+    <string name="diferAverage">MINIMUM DIFFERENCE BETWEEN MEASURES:</string>
+    <string name="pref_default_diferAverage">2</string>
+
+    <string name="movement">MOVEMENT SENSITIVITY:</string>
+    <string name="pref_default_movement">11</string>
+
+    <string name="time">TIME SENSITIVITY:</string>
+    <string name="pref_default_time">20</string>
 </resources>
 
